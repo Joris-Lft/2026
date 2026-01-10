@@ -14,7 +14,7 @@ type Tracking = {
   completed: boolean;
 };
 
-export default function DailyTracking() {
+export default () => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -43,36 +43,6 @@ export default function DailyTracking() {
     (a, b) => Number(a.completed) - Number(b.completed)
   );
 
-  const renderItem = ({ item }: { item: Tracking }) => (
-    <TouchableOpacity
-      style={[
-        styles.trackingItem,
-        {
-          backgroundColor: colors.background,
-        },
-      ]}
-      onPress={() => toggleTracking(item.id)}
-      activeOpacity={0.7}
-    >
-      <View
-        style={[
-          styles.checkbox,
-          { borderColor: item.completed ? colors.tint : colors.icon },
-          item.completed && { backgroundColor: colors.tint },
-        ]}
-      >
-        {item.completed && (
-          <IconSymbol name="checkmark" size={16} color="#fff" />
-        )}
-      </View>
-      <ThemedText
-        style={[styles.trackingTitle, item.completed && styles.completedText]}
-      >
-        {item.title}
-      </ThemedText>
-    </TouchableOpacity>
-  );
-
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.listContainer, { borderColor: colors.icon + "40" }]}>
@@ -86,7 +56,38 @@ export default function DailyTracking() {
 
         <FlatList
           data={sortedTrackings}
-          renderItem={renderItem}
+          renderItem={({ item }: { item: Tracking }) => (
+            <TouchableOpacity
+              style={[
+                styles.trackingItem,
+                {
+                  backgroundColor: colors.background,
+                },
+              ]}
+              onPress={() => toggleTracking(item.id)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  { borderColor: item.completed ? colors.tint : colors.icon },
+                  item.completed && { backgroundColor: colors.tint },
+                ]}
+              >
+                {item.completed && (
+                  <IconSymbol name="checkmark" size={16} color="#fff" />
+                )}
+              </View>
+              <ThemedText
+                style={[
+                  styles.trackingTitle,
+                  item.completed && styles.completedText,
+                ]}
+              >
+                {item.title}
+              </ThemedText>
+            </TouchableOpacity>
+          )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -94,7 +95,7 @@ export default function DailyTracking() {
       </View>
     </ThemedView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
   trackingItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 8,
     gap: 12,
   },
   trackingTitle: {

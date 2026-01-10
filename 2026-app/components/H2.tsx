@@ -1,10 +1,11 @@
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ReactNode } from "react";
 import { StyleSheet, TextStyle } from "react-native";
 
 type H2Props = {
-  children: React.ReactNode;
+  children: ReactNode;
   color?: string;
   style?: TextStyle;
 };
