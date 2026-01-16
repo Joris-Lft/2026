@@ -3,6 +3,8 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { getWeek } from "date-fns";
+import { fr } from "date-fns/locale";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import { PeriodData, Tracking } from "../../types/tracking";
 import H2 from "../H2";
@@ -17,6 +19,7 @@ interface PeriodTrackingProps {
 export const PeriodTracking = ({
   trackings,
   onToggle,
+  period,
 }: PeriodTrackingProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -25,16 +28,26 @@ export const PeriodTracking = ({
     (a, b) => Number(a.completed) - Number(b.completed)
   );
 
+  const getTitle = () => {
+    const today = new Date();
+    switch (period) {
+      case "day":
+        return `Aujourd'hui - ${today.toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+        })}`;
+      case "week":
+        return `Semaine - ${getWeek(today, { weekStartsOn: 1, locale: fr })}`;
+
+      case "month":
+        return `Mois - ${today.getMonth() + 1}`;
+    }
+  };
+
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.listContainer, { borderColor: colors.icon + "40" }]}>
-        <H2 style={styles.title}>
-          Aujourd'hui -{" "}
-          {new Date().toLocaleDateString("fr-FR", {
-            day: "2-digit",
-            month: "2-digit",
-          })}
-        </H2>
+        <H2 style={styles.title}>{getTitle()}</H2>
 
         <FlatList
           data={sortedTrackings}
