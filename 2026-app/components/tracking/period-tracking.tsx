@@ -3,42 +3,24 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { PeriodData, Tracking } from "../../types/tracking";
 import H2 from "../H2";
 
-// Type pour un tracking
-type Tracking = {
-  id: string;
-  title: string;
-  completed: boolean;
-};
+// Props pour le composant
+interface PeriodTrackingProps {
+  trackings: Tracking[];
+  onToggle: (id: string) => void;
+  period: PeriodData["period"];
+}
 
-export default () => {
+export const PeriodTracking = ({
+  trackings,
+  onToggle,
+}: PeriodTrackingProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  // Données en dur pour commencer
-  const [trackings, setTrackings] = useState<Tracking[]>([
-    { id: "1", title: "Boire 2L d'eau", completed: false },
-    { id: "2", title: "Faire du sport", completed: false },
-    { id: "3", title: "Méditer 10min", completed: false },
-    { id: "4", title: "Lire 30min", completed: false },
-    { id: "5", title: "Dormir 8h", completed: false },
-  ]);
-
-  // Fonction pour cocher/décocher un tracking
-  const toggleTracking = (id: string) => {
-    setTrackings((prev) =>
-      prev.map((tracking) =>
-        tracking.id === id
-          ? { ...tracking, completed: !tracking.completed }
-          : tracking
-      )
-    );
-  };
-
-  // Trier les trackings : non complétés en haut, complétés en bas
   const sortedTrackings = [...trackings].sort(
     (a, b) => Number(a.completed) - Number(b.completed)
   );
@@ -56,15 +38,13 @@ export default () => {
 
         <FlatList
           data={sortedTrackings}
-          renderItem={({ item }: { item: Tracking }) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               style={[
                 styles.trackingItem,
-                {
-                  backgroundColor: colors.background,
-                },
+                { backgroundColor: colors.background },
               ]}
-              onPress={() => toggleTracking(item.id)}
+              onPress={() => onToggle(item.id)}
               activeOpacity={0.7}
             >
               <View
@@ -89,8 +69,8 @@ export default () => {
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
+          scrollEnabled={false}
           contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
         />
       </View>
     </ThemedView>
@@ -99,7 +79,6 @@ export default () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     width: "100%",
   },
