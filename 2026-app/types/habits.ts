@@ -25,6 +25,7 @@ export interface Habit {
 export interface CreateHabitInput {
   name: string;
   frequency: HabitFrequency;
+  [key: string]: any;
 }
 
 /**
@@ -33,6 +34,7 @@ export interface CreateHabitInput {
 export interface UpdateHabitInput {
   name?: string;
   frequency?: HabitFrequency;
+  [key: string]: any;
 }
 
 /**

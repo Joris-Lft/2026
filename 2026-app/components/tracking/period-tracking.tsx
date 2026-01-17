@@ -36,9 +36,17 @@ import {
 // Props pour le composant
 interface PeriodTrackingProps {
   period: PeriodData["period"];
+  isEditMode?: boolean;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
+export const PeriodTracking = ({
+  period,
+  isEditMode = false,
+  onEdit,
+  onDelete,
+}: PeriodTrackingProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
@@ -85,22 +93,23 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
         // Créer un Map des logs par habit_id pour un accès rapide
         const logsByHabitId = new Map<string, HabitLog>();
 
-        
         logs.forEach((log) => {
           logsByHabitId.set(log.habit_id, log);
         });
-        
-        // Convertir les habits en trackings en vérifiant s'ils sont complétés
-        const initialTrackings: PeriodTrackingItem[] = habits.map((habit: Habit) => {
-          const log = logsByHabitId.get(habit.id);
 
-          return {
-            id: habit.id,
-            title: habit.name,
-            completed: !!log,
-            logId: log?.id,
-          };
-        });
+        // Convertir les habits en trackings en vérifiant s'ils sont complétés
+        const initialTrackings: PeriodTrackingItem[] = habits.map(
+          (habit: Habit) => {
+            const log = logsByHabitId.get(habit.id);
+
+            return {
+              id: habit.id,
+              title: habit.name,
+              completed: !!log,
+              logId: log?.id,
+            };
+          },
+        );
         setTrackings(initialTrackings);
       } catch (error) {
         console.error(`Error loading ${period} habits and logs:`, error);
@@ -118,11 +127,11 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
 
     const isCurrentlyCompleted = tracking.completed;
     const today = new Date();
-    
+
     // Déterminer la fréquence et la période selon le type de période
     let frequency: HabitFrequency = "daily";
     let periodValue: string = formatDailyPeriod(today);
-    
+
     switch (period) {
       case "day":
         frequency = "daily";
@@ -147,8 +156,8 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
             prev.map((t) =>
               t.id === tracking.id
                 ? { ...t, completed: false, logId: undefined }
-                : t
-            )
+                : t,
+            ),
           );
         } else {
           console.error("Error deleting habit log:", result.error);
@@ -166,8 +175,8 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
             prev.map((t) =>
               t.id === tracking.id
                 ? { ...t, completed: true, logId: result.log!.id }
-                : t
-            )
+                : t,
+            ),
           );
         } else {
           console.error("Error creating habit log:", result.error);
@@ -180,7 +189,7 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
 
   // Trier les trackings : non complétés en haut, complétés en bas
   const sortedTrackings = [...trackings].sort(
-    (a, b) => Number(a.completed) - Number(b.completed)
+    (a, b) => Number(a.completed) - Number(b.completed),
   );
 
   const getTitle = () => {
@@ -228,7 +237,7 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
                     backgroundColor: colors.background,
                   },
                 ]}
-                onPress={() => toggleTracking(item)}
+                onPress={() => !isEditMode && toggleTracking(item)}
                 activeOpacity={0.7}
               >
                 <View
@@ -250,6 +259,26 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
                 >
                   {item.title}
                 </ThemedText>
+
+                {isEditMode && onEdit && onDelete && (
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={() => onEdit(item.id)}
+                      activeOpacity={0.7}
+                    >
+                      <IconSymbol name="pencil" size={20} color={colors.icon} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={() => onDelete(item.id)}
+                      activeOpacity={0.7}
+                    >
+                      <IconSymbol name="trash" size={20} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </TouchableOpacity>
             )}
             keyExtractor={(item) => item.id}
@@ -321,5 +350,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
     textAlign: "center",
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginLeft: "auto",
+  },
+  iconButton: {
+    padding: 4,
   },
 });
