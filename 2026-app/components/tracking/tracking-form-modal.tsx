@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     marginTop: 24,
-    alignItems: "center", // Vertically center items in the row
+    alignItems: "center",
   },
   button: {
     flex: 1,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: "underline",
     width: "50%",
-    textAlign: "center", // Horizontally center the text within its 50% width
+    textAlign: "center",
   },
   submitButton: {},
   submitButtonText: {
