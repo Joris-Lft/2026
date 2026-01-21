@@ -1,37 +1,19 @@
-const AIRTABLE_BASE_ID = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID || "";
-const AIRTABLE_API_KEY = process.env.EXPO_PUBLIC_AIRTABLE_API_KEY || "";
-const AIRTABLE_HABITS_TABLE_NAME =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_TABLE_NAME || "Habits";
-const AIRTABLE_HABITS_USER_ID_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_USER_ID_FIELD || "user_id";
-const AIRTABLE_HABITS_NAME_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_NAME_FIELD || "name";
-const AIRTABLE_HABITS_FREQUENCY_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_FREQUENCY_FIELD || "frequency";
-
-export type HabitFrequency = "daily" | "weekly" | "monthly";
-
-export interface Habit {
-  id: string;
-  user_id: string;
-  name: string;
-  frequency: HabitFrequency;
-  [key: string]: any;
-}
-
-export interface CreateHabitInput {
-  name: string;
-  frequency: HabitFrequency;
-}
-
-export interface UpdateHabitInput {
-  name?: string;
-  frequency?: HabitFrequency;
-}
+import {
+  AIRTABLE_HABITS_USER_ID_FIELD,
+  AIRTABLE_HABITS_NAME_FIELD,
+  AIRTABLE_HABITS_FREQUENCY_FIELD,
+} from "./airtable-config";
+import {
+  Habit,
+  HabitFrequency,
+  CreateHabitInput,
+  UpdateHabitInput,
+} from "@/types/habits";
+import { habitsTable } from "./airtable-client";
 
 /**
  * Crée un nouvel habit dans Airtable
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @param habitData - Les données de l'habit à créer
  * @returns L'habit créé ou null en cas d'erreur
  */
@@ -40,84 +22,58 @@ export async function createHabit(
   habitData: CreateHabitInput
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}`;
-    const fields = {
-      [AIRTABLE_HABITS_USER_ID_FIELD]: userId,
+    const fields: Record<string, any> = {
       [AIRTABLE_HABITS_NAME_FIELD]: habitData.name,
       [AIRTABLE_HABITS_FREQUENCY_FIELD]: habitData.frequency,
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fields }),
-    });
+    // Si user_id est un champ Link, passer un tableau avec l'ID
+    // Sinon, passer directement la valeur
+    fields[AIRTABLE_HABITS_USER_ID_FIELD] = userId;
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
+    const [record] = await habitsTable.create([{ fields }]);
 
-    const data = await response.json();
     const habit: Habit = {
-      id: data.id,
-      user_id: data.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: data.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: data.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
-      ...data.fields,
+      id: record.id,
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      ...record.fields,
     };
 
     return { habit };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create habit error:", error);
     return {
       habit: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la création de l'habit",
+      error: error?.message || "Erreur lors de la création de l'habit",
     };
   }
 }
 
 /**
  * Récupère tous les habits d'un utilisateur
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @returns Liste des habits de l'utilisateur, triés par ordre alphabétique
  */
 export async function getHabitsByUser(userId: string): Promise<Habit[]> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `{${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}"`,
-      sort: `[{field: "${AIRTABLE_HABITS_NAME_FIELD}", direction: "asc"}]`,
-    });
+    const records = await habitsTable
+      .select({
+        filterByFormula: `{${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}"`,
+        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
+      })
+      .all();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.map((record: any) => ({
+    return records.map((record) => ({
       id: record.id,
-      user_id: record.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -128,35 +84,26 @@ export async function getHabitsByUser(userId: string): Promise<Habit[]> {
 
 /**
  * Récupère les habits quotidiens d'un utilisateur
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'email de l'utilisateur connecté
  * @returns Liste des habits quotidiens, triés par ordre alphabétique
  */
+// todo: ajouter la vérification si présence dans les logs
 export async function getDailyHabits(userId: string): Promise<Habit[]> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "daily")`,
-      sort: `[{field: "${AIRTABLE_HABITS_NAME_FIELD}", direction: "asc"}]`,
-    });
+    const records = await habitsTable
+      .select({
+        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "daily")`,
+        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
+      })
+      .all();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.map((record: any) => ({
+    return records.map((record) => ({
       id: record.id,
-      user_id: record.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -167,35 +114,25 @@ export async function getDailyHabits(userId: string): Promise<Habit[]> {
 
 /**
  * Récupère les habits hebdomadaires d'un utilisateur
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @returns Liste des habits hebdomadaires, triés par ordre alphabétique
  */
 export async function getWeeklyHabits(userId: string): Promise<Habit[]> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "weekly")`,
-      sort: `[{field: "${AIRTABLE_HABITS_NAME_FIELD}", direction: "asc"}]`,
-    });
+    const records = await habitsTable
+      .select({
+        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "weekly")`,
+        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
+      })
+      .all();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.map((record: any) => ({
+    return records.map((record) => ({
       id: record.id,
-      user_id: record.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -206,35 +143,25 @@ export async function getWeeklyHabits(userId: string): Promise<Habit[]> {
 
 /**
  * Récupère les habits mensuels d'un utilisateur
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @returns Liste des habits mensuels, triés par ordre alphabétique
  */
 export async function getMonthlyHabits(userId: string): Promise<Habit[]> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "monthly")`,
-      sort: `[{field: "${AIRTABLE_HABITS_NAME_FIELD}", direction: "asc"}]`,
-    });
+    const records = await habitsTable
+      .select({
+        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "monthly")`,
+        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
+      })
+      .all();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.map((record: any) => ({
+    return records.map((record) => ({
       id: record.id,
-      user_id: record.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -254,7 +181,6 @@ export async function updateHabit(
   updates: UpdateHabitInput
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}/${habitId}`;
     const fields: Record<string, any> = {};
 
     if (updates.name !== undefined) {
@@ -264,42 +190,24 @@ export async function updateHabit(
       fields[AIRTABLE_HABITS_FREQUENCY_FIELD] = updates.frequency;
     }
 
-    const response = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fields }),
-    });
+    const [record] = await habitsTable.update([{ id: habitId, fields }]);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
-
-    const data = await response.json();
     const habit: Habit = {
-      id: data.id,
-      user_id: data.fields[AIRTABLE_HABITS_USER_ID_FIELD],
-      name: data.fields[AIRTABLE_HABITS_NAME_FIELD],
-      frequency: data.fields[AIRTABLE_HABITS_FREQUENCY_FIELD],
-      ...data.fields,
+      id: record.id,
+      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
+        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
+        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
+      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      ...record.fields,
     };
 
     return { habit };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Update habit error:", error);
     return {
       habit: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la mise à jour de l'habit",
+      error: error?.message || "Erreur lors de la mise à jour de l'habit",
     };
   }
 }
@@ -313,34 +221,13 @@ export async function deleteHabit(
   habitId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_TABLE_NAME}/${habitId}`;
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
-
+    await habitsTable.destroy([habitId]);
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Delete habit error:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la suppression de l'habit",
+      error: error?.message || "Erreur lors de la suppression de l'habit",
     };
   }
 }

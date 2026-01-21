@@ -13,14 +13,14 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import { PeriodData } from "../../types/tracking";
+import { PeriodData, PeriodTrackingItem } from "../../types/tracking";
+import { HabitFrequency, Habit, HabitLog } from "@/types/habits";
 import H2 from "../H2";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getDailyHabits,
   getWeeklyHabits,
   getMonthlyHabits,
-  Habit,
 } from "@/services/habits";
 import {
   getDailyHabitLogs,
@@ -31,7 +31,6 @@ import {
   formatDailyPeriod,
   getWeekNumber,
   formatMonthlyPeriod,
-  HabitLog,
 } from "@/services/habits-logs";
 
 // Props pour le composant
@@ -39,25 +38,18 @@ interface PeriodTrackingProps {
   period: PeriodData["period"];
 }
 
-// Type pour un tracking avec log
-type PeriodTrackingItem = {
-  id: string;
-  title: string;
-  completed: boolean;
-  logId?: string; // ID du log si l'habit est complété
-};
-
 export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
+
   const [trackings, setTrackings] = useState<PeriodTrackingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Charger les habits et leurs logs depuis Airtable selon la période
   useEffect(() => {
     const loadHabitsAndLogs = async () => {
-      if (!user?.Name) {
+      if (!user?.email) {
         setIsLoading(false);
         return;
       }
@@ -72,20 +64,20 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
         switch (period) {
           case "day":
             [habits, logs] = await Promise.all([
-              getDailyHabits(user.Name),
-              getDailyHabitLogs(user.Name, today),
+              getDailyHabits(user.email),
+              getDailyHabitLogs(user.email, today),
             ]);
             break;
           case "week":
             [habits, logs] = await Promise.all([
-              getWeeklyHabits(user.Name),
-              getWeeklyHabitLogs(user.Name, today),
+              getWeeklyHabits(user.email),
+              getWeeklyHabitLogs(user.email, today),
             ]);
             break;
           case "month":
             [habits, logs] = await Promise.all([
-              getMonthlyHabits(user.Name),
-              getMonthlyHabitLogs(user.Name, today),
+              getMonthlyHabits(user.email),
+              getMonthlyHabitLogs(user.email, today),
             ]);
             break;
         }
@@ -115,17 +107,17 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
     };
 
     loadHabitsAndLogs();
-  }, [user?.Name, period]);
+  }, [user?.email, period]);
 
   // Fonction pour cocher/décocher un tracking
   const toggleTracking = async (tracking: PeriodTrackingItem) => {
-    if (!user?.Name) return;
+    if (!user?.email) return;
 
     const isCurrentlyCompleted = tracking.completed;
     const today = new Date();
     
     // Déterminer la fréquence et la période selon le type de période
-    let frequency: "daily" | "weekly" | "monthly" = "daily";
+    let frequency: HabitFrequency = "daily";
     let periodValue: string = formatDailyPeriod(today);
     
     switch (period) {
@@ -162,7 +154,7 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
         // Créer un nouveau log si l'habit n'est pas complété
         const result = await createHabitLog({
           habit_id: tracking.id,
-          user_id: user.Name,
+          user_id: user.id,
           frequency: frequency,
           period: periodValue,
         });

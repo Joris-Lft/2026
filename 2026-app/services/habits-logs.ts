@@ -1,36 +1,12 @@
-const AIRTABLE_BASE_ID = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID || "";
-const AIRTABLE_API_KEY = process.env.EXPO_PUBLIC_AIRTABLE_API_KEY || "";
-const AIRTABLE_HABITS_LOGS_TABLE_NAME =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_TABLE_NAME || "HabitsLogs";
-const AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD || "habit_id";
-const AIRTABLE_HABITS_LOGS_USER_ID_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_USER_ID_FIELD || "user_id";
-const AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD ||
-  "completed_at";
-const AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD || "frequency";
-const AIRTABLE_HABITS_LOGS_PERIOD_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_LOGS_PERIOD_FIELD || "period";
-
-export interface HabitLog {
-  id: string;
-  habit_id: string;
-  user_id: string;
-  completed_at: string;
-  frequency: "daily" | "weekly" | "monthly";
-  period: string;
-  [key: string]: any;
-}
-
-export interface CreateHabitLogInput {
-  habit_id: string;
-  user_id: string;
-  completed_at?: string; // Si non fourni, utilise la date actuelle
-  frequency: "daily" | "weekly" | "monthly";
-  period: string;
-}
+import {
+  AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD,
+  AIRTABLE_HABITS_LOGS_USER_ID_FIELD,
+  AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD,
+  AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD,
+  AIRTABLE_HABITS_LOGS_PERIOD_FIELD,
+} from "./airtable-config";
+import { HabitLog, HabitFrequency, CreateHabitLogInput } from "@/types/habits";
+import { habitsLogsTable } from "./airtable-client";
 
 /**
  * Formate une date au format DD/MM/YYYY pour les daily habits
@@ -63,44 +39,41 @@ export function formatMonthlyPeriod(date: Date): string {
 
 /**
  * Récupère les logs d'habits pour un utilisateur, une fréquence et une période donnés
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @param frequency - La fréquence (daily, weekly, monthly)
  * @param period - La période (format dépend de la fréquence)
  * @returns Liste des logs correspondants
  */
 export async function getHabitLogsByPeriod(
   userId: string,
-  frequency: "daily" | "weekly" | "monthly",
+  frequency: HabitFrequency,
   period: string
 ): Promise<HabitLog[]> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_LOGS_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `AND({${AIRTABLE_HABITS_LOGS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD}} = "${frequency}", {${AIRTABLE_HABITS_LOGS_PERIOD_FIELD}} = "${period}")`,
+    const records = await habitsLogsTable
+      .select({
+        filterByFormula: `AND({${AIRTABLE_HABITS_LOGS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD}} = "${frequency}", {${AIRTABLE_HABITS_LOGS_PERIOD_FIELD}} = "${period}")`,
+      })
+      .all();
+
+    return records.map((record) => {
+      const habitIdField = record.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD];
+      const userIdField = record.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD];
+
+      return {
+        id: record.id,
+        habit_id: Array.isArray(habitIdField)
+          ? (habitIdField as string[])[0]
+          : (habitIdField as string),
+        user_id: Array.isArray(userIdField)
+          ? (userIdField as string[])[0]
+          : (userIdField as string),
+        completed_at: record.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD] as string,
+        frequency: record.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD] as HabitFrequency,
+        period: record.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD] as string,
+        ...record.fields,
+      };
     });
-
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.map((record: any) => ({
-      id: record.id,
-      habit_id: record.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD],
-      user_id: record.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD],
-      completed_at: record.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD],
-      frequency: record.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD],
-      period: record.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD],
-      ...record.fields,
-    }));
   } catch (error) {
     console.error("Get habit logs by period error:", error);
     return [];
@@ -110,7 +83,7 @@ export async function getHabitLogsByPeriod(
 /**
  * Récupère tous les logs d'habits quotidiens pour un utilisateur et une date donnée
  * Optimisé pour récupérer tous les logs en une seule requête
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @param date - La date pour laquelle récupérer les logs (par défaut: aujourd'hui)
  * @returns Liste des logs quotidiens pour cette date
  */
@@ -124,7 +97,7 @@ export async function getDailyHabitLogs(
 
 /**
  * Récupère tous les logs d'habits hebdomadaires pour un utilisateur et une semaine donnée
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @param date - Une date de la semaine pour laquelle récupérer les logs (par défaut: aujourd'hui)
  * @returns Liste des logs hebdomadaires pour cette semaine
  */
@@ -138,7 +111,7 @@ export async function getWeeklyHabitLogs(
 
 /**
  * Récupère tous les logs d'habits mensuels pour un utilisateur et un mois donné
- * @param userId - Le Name de l'utilisateur connecté
+ * @param userId - L'ID de l'utilisateur connecté
  * @param date - Une date du mois pour lequel récupérer les logs (par défaut: aujourd'hui)
  * @returns Liste des logs mensuels pour ce mois
  */
@@ -159,55 +132,43 @@ export async function createHabitLog(
   logData: CreateHabitLogInput
 ): Promise<{ log: HabitLog | null; error?: string }> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_LOGS_TABLE_NAME}`;
     const completedAt = logData.completed_at || new Date().toISOString();
     
-    const fields = {
-      [AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD]: logData.habit_id,
-      [AIRTABLE_HABITS_LOGS_USER_ID_FIELD]: logData.user_id,
+    const fields: Record<string, any> = {
       [AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD]: completedAt,
       [AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD]: logData.frequency,
       [AIRTABLE_HABITS_LOGS_PERIOD_FIELD]: logData.period,
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fields }),
-    });
+    // Gérer les champs Link : Airtable nécessite un tableau d'objets avec la propriété "id" pour les champs de type Link
+    fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD] = [logData.habit_id];
+    fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD] = [logData.user_id ];
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
+    const [record] = await habitsLogsTable.create([{ fields }]);
 
-    const data = await response.json();
+    const habitIdField = record.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD];
+    const userIdField = record.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD];
+
     const log: HabitLog = {
-      id: data.id,
-      habit_id: data.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD],
-      user_id: data.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD],
-      completed_at: data.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD],
-      frequency: data.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD],
-      period: data.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD],
-      ...data.fields,
+      id: record.id,
+      habit_id: Array.isArray(habitIdField)
+        ? (habitIdField as string[])[0]
+        : (habitIdField as string),
+      user_id: Array.isArray(userIdField)
+        ? (userIdField as string[])[0]
+        : (userIdField as string),
+      completed_at: record.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD] as string,
+      frequency: record.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD] as HabitFrequency,
+      period: record.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD] as string,
+      ...record.fields,
     };
 
     return { log };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create habit log error:", error);
     return {
       log: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la création du log",
+      error: error?.message || "Erreur lors de la création du log",
     };
   }
 }
@@ -221,34 +182,13 @@ export async function deleteHabitLog(
   logId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_HABITS_LOGS_TABLE_NAME}/${logId}`;
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
-
+    await habitsLogsTable.destroy([logId]);
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Delete habit log error:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la suppression du log",
+      error: error?.message || "Erreur lors de la suppression du log",
     };
   }
 }
