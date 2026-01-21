@@ -84,13 +84,18 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
 
         // Créer un Map des logs par habit_id pour un accès rapide
         const logsByHabitId = new Map<string, HabitLog>();
+
+        
         logs.forEach((log) => {
           logsByHabitId.set(log.habit_id, log);
         });
-
+        
         // Convertir les habits en trackings en vérifiant s'ils sont complétés
         const initialTrackings: PeriodTrackingItem[] = habits.map((habit: Habit) => {
           const log = logsByHabitId.get(habit.id);
+
+          console.log("🚀 ~ loadHabitsAndLogs ~ log:", log)
+
           return {
             id: habit.id,
             title: habit.name,

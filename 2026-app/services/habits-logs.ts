@@ -60,6 +60,13 @@ export async function getHabitLogsByPeriod(
       const habitIdField = record.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD];
       const userIdField = record.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD];
 
+      // Extraire les champs bruts et exclure ceux qu'on va redéfinir
+      const { 
+        [AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD]: _habitIdField,
+        [AIRTABLE_HABITS_LOGS_USER_ID_FIELD]: _userIdField,
+        ...otherFields 
+      } = record.fields;
+
       return {
         id: record.id,
         habit_id: Array.isArray(habitIdField)
@@ -71,7 +78,7 @@ export async function getHabitLogsByPeriod(
         completed_at: record.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD] as string,
         frequency: record.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD] as HabitFrequency,
         period: record.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD] as string,
-        ...record.fields,
+        ...otherFields,
       };
     });
   } catch (error) {
@@ -149,6 +156,13 @@ export async function createHabitLog(
     const habitIdField = record.fields[AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD];
     const userIdField = record.fields[AIRTABLE_HABITS_LOGS_USER_ID_FIELD];
 
+    // Extraire les champs bruts et exclure ceux qu'on va redéfinir
+    const { 
+      [AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD]: _habitIdField,
+      [AIRTABLE_HABITS_LOGS_USER_ID_FIELD]: _userIdField,
+      ...otherFields 
+    } = record.fields;
+
     const log: HabitLog = {
       id: record.id,
       habit_id: Array.isArray(habitIdField)
@@ -160,7 +174,7 @@ export async function createHabitLog(
       completed_at: record.fields[AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD] as string,
       frequency: record.fields[AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD] as HabitFrequency,
       period: record.fields[AIRTABLE_HABITS_LOGS_PERIOD_FIELD] as string,
-      ...record.fields,
+      ...otherFields,
     };
 
     return { log };
