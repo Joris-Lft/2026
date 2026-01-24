@@ -94,8 +94,6 @@ export const PeriodTracking = ({ period }: PeriodTrackingProps) => {
         const initialTrackings: PeriodTrackingItem[] = habits.map((habit: Habit) => {
           const log = logsByHabitId.get(habit.id);
 
-          console.log("🚀 ~ loadHabitsAndLogs ~ log:", log)
-
           return {
             id: habit.id,
             title: habit.name,
