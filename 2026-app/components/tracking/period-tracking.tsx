@@ -13,7 +13,7 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import { PeriodData, PeriodTrackingItem } from "../../types/tracking";
+import { PeriodData } from "@/types/tracking";
 import { HabitFrequency, Habit, HabitLog } from "@/types/habits";
 import H2 from "../H2";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,27 +32,28 @@ import {
   getWeekNumber,
   formatMonthlyPeriod,
 } from "@/services/habits-logs";
+import { TrackingFormModal } from "./tracking-form-modal";
 
 // Props pour le composant
 interface PeriodTrackingProps {
   period: PeriodData["period"];
   isEditMode?: boolean;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
 }
 
 export const PeriodTracking = ({
   period,
   isEditMode = false,
-  onEdit,
-  onDelete,
 }: PeriodTrackingProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
 
-  const [trackings, setTrackings] = useState<PeriodTrackingItem[]>([]);
+  const [trackings, setTrackings] = useState<Habit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingTracking, setEditingTracking] = useState<Habit | undefined>(
+    undefined,
+  );
 
   // Charger les habits et leurs logs depuis Airtable selon la période
   useEffect(() => {
@@ -98,18 +99,17 @@ export const PeriodTracking = ({
         });
 
         // Convertir les habits en trackings en vérifiant s'ils sont complétés
-        const initialTrackings: PeriodTrackingItem[] = habits.map(
-          (habit: Habit) => {
-            const log = logsByHabitId.get(habit.id);
+        const initialTrackings: Habit[] = habits.map((habit: Habit) => {
+          const log = logsByHabitId.get(habit.id);
 
-            return {
-              id: habit.id,
-              title: habit.name,
-              completed: !!log,
-              logId: log?.id,
-            };
-          },
-        );
+          return {
+            ...habit,
+            id: habit.id,
+            title: habit.name,
+            completed: !!log,
+            logId: log?.id,
+          };
+        });
         setTrackings(initialTrackings);
       } catch (error) {
         console.error(`Error loading ${period} habits and logs:`, error);
@@ -122,7 +122,7 @@ export const PeriodTracking = ({
   }, [user?.email, period]);
 
   // Fonction pour cocher/décocher un tracking
-  const toggleTracking = async (tracking: PeriodTrackingItem) => {
+  const toggleTracking = async (tracking: Habit) => {
     if (!user?.email) return;
 
     const isCurrentlyCompleted = tracking.completed;
@@ -208,6 +208,20 @@ export const PeriodTracking = ({
     }
   };
 
+  const editHabit = (id: string) => {
+    // todo: appeler service updateHabit
+    // const tracking = trackings.find((t) => t.id === id);
+    // if (tracking) {
+    //   setEditingTracking(tracking);
+    //   setIsModalVisible(true);
+    // }
+  };
+
+  const deleteHabit = (id: string) => {
+    // todo: appeler service deleteHabit
+    console.log("Supprimer le tracking:", id);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.listContainer, { borderColor: colors.icon + "40" }]}>
@@ -229,7 +243,7 @@ export const PeriodTracking = ({
         ) : (
           <FlatList
             data={sortedTrackings}
-            renderItem={({ item }: { item: PeriodTrackingItem }) => (
+            renderItem={({ item }: { item: Habit }) => (
               <TouchableOpacity
                 style={[
                   styles.trackingItem,
@@ -260,11 +274,14 @@ export const PeriodTracking = ({
                   {item.title}
                 </ThemedText>
 
-                {isEditMode && onEdit && onDelete && (
+                {isEditMode && (
                   <View style={styles.editActions}>
                     <TouchableOpacity
                       style={styles.iconButton}
-                      onPress={() => onEdit(item.id)}
+                      onPress={() => {
+                        setIsModalVisible(true);
+                        setEditingTracking(item);
+                      }}
                       activeOpacity={0.7}
                     >
                       <IconSymbol name="pencil" size={20} color={colors.icon} />
@@ -272,7 +289,7 @@ export const PeriodTracking = ({
 
                     <TouchableOpacity
                       style={styles.iconButton}
-                      onPress={() => onDelete(item.id)}
+                      onPress={() => deleteHabit(item.id)}
                       activeOpacity={0.7}
                     >
                       <IconSymbol name="trash" size={20} color="#ef4444" />
@@ -288,6 +305,14 @@ export const PeriodTracking = ({
           />
         )}
       </View>
+      <TrackingFormModal
+        isVisible={isModalVisible}
+        onClose={() => {
+          setIsModalVisible(false);
+        }}
+        onSubmit={editHabit}
+        editingTracking={editingTracking}
+      />
     </ThemedView>
   );
 };

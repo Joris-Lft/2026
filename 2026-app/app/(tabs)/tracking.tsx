@@ -4,15 +4,11 @@ import { PeriodTracking } from "@/components/tracking/period-tracking";
 import { TrackingFormModal } from "@/components/tracking/tracking-form-modal";
 import { useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { PeriodData, Tracking, TrackingType } from "../../types/tracking";
-import { Habit } from "../../types/habits";
+import { PeriodData } from "@/types/tracking";
 
 export default function TrackingScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingTracking, setEditingTracking] = useState<Habit | undefined>(
-    undefined,
-  );
   const periods: PeriodData[] = [
     {
       key: "day",
@@ -32,43 +28,8 @@ export default function TrackingScreen() {
   ];
 
   const addTracking = () => {
-    setEditingTracking(undefined);
+    // todo: appeler service createHabit
     setIsModalVisible(true);
-  };
-
-  // todo: déplacer dans period-tracking.tsx
-  const editTracking = (id: string) => {
-    // todo: appeler service updateHabit
-    // const tracking = trackings.find((t) => t.id === id);
-    // if (tracking) {
-    //   setEditingTracking(tracking);
-    //   setIsModalVisible(true);
-    // }
-  };
-
-  // todo: déplacer dans period-tracking.tsx
-  const deleteTracking = (id: string) => {
-    // todo: appeler service deleteHabit
-    console.log("Supprimer le tracking:", id);
-  };
-
-  // todo: déplacer dans period-tracking.tsx
-  const handleFormSubmit = (
-    title: string,
-    type: TrackingType,
-    startDate: Date,
-  ) => {
-    if (editingTracking) {
-      console.log("Édition du tracking:", editingTracking.id);
-      console.log("- Nouveau titre:", title);
-      console.log("- Nouveau type:", type);
-      console.log("- Date:", startDate);
-    } else {
-      console.log("Ajout d'un nouveau tracking:");
-      console.log("- Titre:", title);
-      console.log("- Type:", type);
-      console.log("- Date:", startDate);
-    }
   };
 
   return (
@@ -96,26 +57,18 @@ export default function TrackingScreen() {
       <FlatList
         data={periods}
         renderItem={({ item }) => (
-          <PeriodTracking
-            period={item.period}
-            isEditMode={isEditMode}
-            onEdit={editTracking}
-            onDelete={deleteTracking}
-          />
+          <PeriodTracking period={item.period} isEditMode={isEditMode} />
         )}
         keyExtractor={(item) => item.key}
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       />
-      {/* // todo: déplacer dans period-tracking.tsx */}
       <TrackingFormModal
         isVisible={isModalVisible}
         onClose={() => {
           setIsModalVisible(false);
-          setEditingTracking(undefined);
         }}
-        onSubmit={handleFormSubmit}
-        editingTracking={editingTracking}
+        onSubmit={addTracking}
       />
     </ThemedView>
   );

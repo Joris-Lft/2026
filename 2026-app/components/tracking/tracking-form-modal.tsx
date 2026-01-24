@@ -5,13 +5,14 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect, useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import Modal from "react-native-modal";
-import { Tracking, TrackingType } from "../../types/tracking";
+import { PeriodType } from "@/types/tracking";
+import { Habit } from "@/types/habits";
 
 interface TrackingFormModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, type: TrackingType, startDate: Date) => void;
-  editingTracking?: Tracking;
+  onSubmit: (title: string, type: PeriodType, startDate: Date) => void;
+  editingTracking?: Habit;
 }
 
 export const TrackingFormModal = ({
@@ -24,13 +25,15 @@ export const TrackingFormModal = ({
   const colors = Colors[colorScheme ?? "light"];
 
   const [title, setTitle] = useState("");
-  const [selectedType, setSelectedType] = useState<TrackingType>("day");
+  const [selectedType, setSelectedType] = useState<PeriodType>("day");
   const [startDate] = useState(new Date());
 
+  // todo: retravailler par rappoer à editingTracking reçu en props
+  // plus besoin de passer par un state intermédiaire
   useEffect(() => {
     if (editingTracking) {
-      setTitle(editingTracking.title);
-      setSelectedType(editingTracking.type);
+      setTitle(editingTracking.title); // editingTracking.name
+      setSelectedType(editingTracking.type); // editingTracking.frequency
     } else {
       setTitle("");
       setSelectedType("day");
@@ -83,7 +86,9 @@ export const TrackingFormModal = ({
       <ThemedView style={styles.modalContent}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>
-            {editingTracking ? "Modifier le tracking" : "Ajouter un tracking"}{" "}
+            {editingTracking
+              ? "Modifier le tracking"
+              : "Ajouter un tracking"}{" "}
           </ThemedText>
           <TouchableOpacity onPress={onClose}>
             <ThemedText style={styles.closeButton}>✕</ThemedText>
