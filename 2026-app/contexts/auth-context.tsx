@@ -3,8 +3,8 @@ import {
   loginWithAirtable,
   logout as logoutService,
   checkAuthStatus,
-  User,
 } from "@/services/airtable";
+import { User } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const { user: currentUser } = await checkAuthStatus();
+
       setUser(currentUser);
     } catch (error) {
       console.error("Error checking auth:", error);

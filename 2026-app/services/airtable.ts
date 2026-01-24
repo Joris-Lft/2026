@@ -1,28 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { hashPassword, verifyPassword } from "@/utils/password-hash";
-
-const AIRTABLE_BASE_ID = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID || "";
-const AIRTABLE_API_KEY = process.env.EXPO_PUBLIC_AIRTABLE_API_KEY || "";
-const AIRTABLE_TABLE_NAME =
-  process.env.EXPO_PUBLIC_AIRTABLE_TABLE_NAME || "Users";
-const AIRTABLE_EMAIL_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_EMAIL_FIELD || "Email";
-const AIRTABLE_PASSWORD_FIELD =
-  process.env.EXPO_PUBLIC_AIRTABLE_PASSWORD_FIELD || "Password";
+import {
+  AIRTABLE_EMAIL_FIELD,
+  AIRTABLE_PASSWORD_FIELD,
+} from "./airtable-config";
+import { User, LoginCredentials } from "@/types/user";
+import { usersTable } from "./airtable-client";
 
 const AUTH_STORAGE_KEY = "@app_auth_token";
 const USER_STORAGE_KEY = "@app_user_data";
-
-export interface User {
-  id: string;
-  email: string;
-  [key: string]: any;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
 
 /**
  * Recherche un utilisateur dans Airtable par email et vérifie le mot de passe
@@ -31,31 +17,19 @@ export async function loginWithAirtable(
   credentials: LoginCredentials
 ): Promise<{ user: User; token: string } | null> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `{${AIRTABLE_EMAIL_FIELD}} = "${credentials.email}"`,
-    });
+    const records = await usersTable
+      .select({
+        filterByFormula: `{${AIRTABLE_EMAIL_FIELD}} = "${credentials.email}"`,
+        maxRecords: 1,
+      })
+      .firstPage();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.records.length === 0) {
+    if (records.length === 0) {
       return null; // Utilisateur non trouvé
     }
 
-    const userRecord = data.records[0];
-    const storedPasswordHash = userRecord.fields[AIRTABLE_PASSWORD_FIELD];
+    const userRecord = records[0];
+    const storedPasswordHash = userRecord.fields[AIRTABLE_PASSWORD_FIELD] as string;
 
     // Vérification du mot de passe hashé
     const isPasswordValid = await verifyPassword(
@@ -71,7 +45,7 @@ export async function loginWithAirtable(
 
     const user: User = {
       id: userRecord.id,
-      email: userRecord.fields[AIRTABLE_EMAIL_FIELD],
+      email: userRecord.fields[AIRTABLE_EMAIL_FIELD] as string,
       ...userRecord.fields,
     };
 
@@ -115,6 +89,7 @@ export async function checkAuthStatus(): Promise<{
     }
 
     const user: User = JSON.parse(userData);
+
     return { isAuthenticated: true, user };
   } catch (error) {
     console.error("Check auth status error:", error);
@@ -129,25 +104,14 @@ export async function checkAuthStatus(): Promise<{
  */
 export async function emailExists(email: string): Promise<boolean> {
   try {
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
-    const params = new URLSearchParams({
-      filterByFormula: `{${AIRTABLE_EMAIL_FIELD}} = "${email}"`,
-    });
+    const records = await usersTable
+      .select({
+        filterByFormula: `{${AIRTABLE_EMAIL_FIELD}} = "${email}"`,
+        maxRecords: 1,
+      })
+      .firstPage();
 
-    const response = await fetch(`${url}?${params}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.records.length > 0;
+    return records.length > 0;
   } catch (error) {
     console.error("Email exists check error:", error);
     return false;
@@ -177,47 +141,27 @@ export async function createUser(
     // Hasher le mot de passe avant de l'envoyer
     const passwordHash = await hashPassword(password);
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
     const fields = {
       [AIRTABLE_EMAIL_FIELD]: email,
       [AIRTABLE_PASSWORD_FIELD]: passwordHash,
       ...additionalFields,
     };
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fields }),
-    });
+    const [record] = await usersTable.create([{ fields }]);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Airtable API error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
-    }
-
-    const data = await response.json();
     const user: User = {
-      id: data.id,
-      email: data.fields[AIRTABLE_EMAIL_FIELD],
-      ...data.fields,
+      id: record.id,
+      email: record.fields[AIRTABLE_EMAIL_FIELD] as string,
+      ...record.fields,
     };
 
     return { user };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create user error:", error);
     return {
       user: null,
       error:
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la création du compte",
+        error?.message || "Erreur lors de la création du compte",
     };
   }
 }
