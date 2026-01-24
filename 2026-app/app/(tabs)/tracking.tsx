@@ -38,6 +38,7 @@ export default function TrackingScreen() {
 
   // todo: déplacer dans period-tracking.tsx
   const editTracking = (id: string) => {
+    // todo: appeler service updateHabit
     // const tracking = trackings.find((t) => t.id === id);
     // if (tracking) {
     //   setEditingTracking(tracking);
@@ -47,6 +48,7 @@ export default function TrackingScreen() {
 
   // todo: déplacer dans period-tracking.tsx
   const deleteTracking = (id: string) => {
+    // todo: appeler service deleteHabit
     console.log("Supprimer le tracking:", id);
   };
 
