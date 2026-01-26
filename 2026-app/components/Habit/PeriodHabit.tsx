@@ -2,48 +2,50 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  getDailyHabits,
+  getMonthlyHabits,
+  getWeeklyHabits,
+} from "@/services/habits";
+import {
+  createHabitLog,
+  deleteHabitLog,
+  formatDailyPeriod,
+  formatMonthlyPeriod,
+  getDailyHabitLogs,
+  getMonthlyHabitLogs,
+  getWeeklyHabitLogs,
+  getWeekNumber,
+} from "@/services/habits-logs";
+import { Habit, HabitFrequency, HabitLog } from "@/types/habits";
+import { PeriodData } from "@/types/tracking";
 import { getWeek } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
-import { PeriodData } from "@/types/tracking";
-import { HabitFrequency, Habit, HabitLog } from "@/types/habits";
 import H2 from "../H2";
-import { useAuth } from "@/contexts/auth-context";
-import {
-  getDailyHabits,
-  getWeeklyHabits,
-  getMonthlyHabits,
-} from "@/services/habits";
-import {
-  getDailyHabitLogs,
-  getWeeklyHabitLogs,
-  getMonthlyHabitLogs,
-  createHabitLog,
-  deleteHabitLog,
-  formatDailyPeriod,
-  getWeekNumber,
-  formatMonthlyPeriod,
-} from "@/services/habits-logs";
-import { TrackingFormModal } from "./tracking-form-modal";
+import { HabitFormModal } from "./HabitFormModal";
 
 // Props pour le composant
-interface PeriodTrackingProps {
+interface PeriodHabitProps {
   period: PeriodData["period"];
   isEditMode?: boolean;
+  refreshTrigger: boolean;
 }
 
-export const PeriodTracking = ({
+export const PeriodHabit = ({
   period,
   isEditMode = false,
-}: PeriodTrackingProps) => {
+  refreshTrigger,
+}: PeriodHabitProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
@@ -119,7 +121,7 @@ export const PeriodTracking = ({
     };
 
     loadHabitsAndLogs();
-  }, [user?.email, period]);
+  }, [user?.email, period, refreshTrigger]);
 
   // Fonction pour cocher/décocher un tracking
   const toggleTracking = async (tracking: Habit) => {
@@ -305,7 +307,7 @@ export const PeriodTracking = ({
           />
         )}
       </View>
-      <TrackingFormModal
+      <HabitFormModal
         isVisible={isModalVisible}
         onClose={() => {
           setIsModalVisible(false);

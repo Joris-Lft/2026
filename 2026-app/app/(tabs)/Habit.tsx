@@ -1,14 +1,19 @@
+import { HabitFormModal } from "@/components/Habit/HabitFormModal";
+import { PeriodHabit } from "@/components/Habit/PeriodHabit";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { PeriodTracking } from "@/components/tracking/period-tracking";
-import { TrackingFormModal } from "@/components/tracking/tracking-form-modal";
+import { useAuth } from "@/contexts/auth-context";
+import { createHabit } from "@/services/habits";
+import { CreateHabitInput } from "@/types/habits";
+import { PeriodData } from "@/types/tracking";
 import { useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { PeriodData } from "@/types/tracking";
 
-export default function TrackingScreen() {
+export default function HabitScreen() {
+  const { user } = useAuth();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [refreshPeriodHabits, setRefreshPeriodHabits] = useState(false);
   const periods: PeriodData[] = [
     {
       key: "day",
@@ -27,9 +32,19 @@ export default function TrackingScreen() {
     },
   ];
 
-  const addTracking = () => {
-    // todo: appeler service createHabit
-    setIsModalVisible(true);
+  const addHabit = async (value: CreateHabitInput) => {
+    if (!user?.id) {
+      // setIsLoading(false);
+      return;
+    }
+    try {
+      await createHabit(user?.id, value); // Await createHabit
+      console.log("Habit créé avec succès:", value);
+      setRefreshPeriodHabits((prev) => !prev); // Toggle to refresh PeriodHabit
+    } catch (error) {
+      console.error("Erreur lors de la création de l'habit:", error);
+    }
+    setIsModalVisible(false);
   };
 
   return (
@@ -46,7 +61,10 @@ export default function TrackingScreen() {
         </TouchableOpacity>
 
         {isEditMode && (
-          <TouchableOpacity onPress={addTracking} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => setIsModalVisible(true)}
+            activeOpacity={0.7}
+          >
             <ThemedText style={styles.linkText}>
               + Ajouter un tracking
             </ThemedText>
@@ -57,18 +75,23 @@ export default function TrackingScreen() {
       <FlatList
         data={periods}
         renderItem={({ item }) => (
-          <PeriodTracking period={item.period} isEditMode={isEditMode} />
+          <PeriodHabit
+            period={item.period}
+            isEditMode={isEditMode}
+            refreshTrigger={refreshPeriodHabits}
+          />
         )}
         keyExtractor={(item) => item.key}
+        extraData={refreshPeriodHabits}
         style={{ width: "100%" }}
         showsVerticalScrollIndicator={false}
       />
-      <TrackingFormModal
+      <HabitFormModal
         isVisible={isModalVisible}
         onClose={() => {
           setIsModalVisible(false);
         }}
-        onSubmit={addTracking}
+        onSubmit={addHabit}
       />
     </ThemedView>
   );

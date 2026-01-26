@@ -1,35 +1,30 @@
 import {
-  AIRTABLE_HABITS_USER_ID_FIELD,
-  AIRTABLE_HABITS_NAME_FIELD,
-  AIRTABLE_HABITS_FREQUENCY_FIELD,
-} from "./airtable-config";
-import {
+  CreateHabitInput,
   Habit,
   HabitFrequency,
-  CreateHabitInput,
   UpdateHabitInput,
 } from "@/types/habits";
+import { ISOStringFormat } from "date-fns";
 import { habitsTable } from "./airtable-client";
+import {
+  AIRTABLE_HABITS_CREATED_AT_FIELD,
+  AIRTABLE_HABITS_FREQUENCY_FIELD,
+  AIRTABLE_HABITS_NAME_FIELD,
+  AIRTABLE_HABITS_USER_ID_FIELD,
+} from "./airtable-config";
 
-/**
- * Crée un nouvel habit dans Airtable
- * @param userId - L'ID de l'utilisateur connecté
- * @param habitData - Les données de l'habit à créer
- * @returns L'habit créé ou null en cas d'erreur
- */
 export async function createHabit(
   userId: string,
   habitData: CreateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
+    console.log("habitData", habitData);
     const fields: Record<string, any> = {
       [AIRTABLE_HABITS_NAME_FIELD]: habitData.name,
       [AIRTABLE_HABITS_FREQUENCY_FIELD]: habitData.frequency,
+      [AIRTABLE_HABITS_CREATED_AT_FIELD]: habitData.createdAt,
+      [AIRTABLE_HABITS_USER_ID_FIELD]: [userId],
     };
-
-    // Si user_id est un champ Link, passer un tableau avec l'ID
-    // Sinon, passer directement la valeur
-    fields[AIRTABLE_HABITS_USER_ID_FIELD] = userId;
 
     const [record] = await habitsTable.create([{ fields }]);
 
@@ -42,6 +37,9 @@ export async function createHabit(
       frequency: record.fields[
         AIRTABLE_HABITS_FREQUENCY_FIELD
       ] as HabitFrequency,
+      created_at: record.fields[
+        AIRTABLE_HABITS_CREATED_AT_FIELD
+      ] as ISOStringFormat,
       ...record.fields,
     };
 

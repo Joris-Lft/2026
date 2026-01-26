@@ -2,30 +2,29 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { CreateHabitInput, Habit, HabitFrequency } from "@/types/habits";
 import { useEffect, useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import Modal from "react-native-modal";
-import { PeriodType } from "@/types/tracking";
-import { Habit } from "@/types/habits";
 
-interface TrackingFormModalProps {
+interface HabitFormModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, type: PeriodType, startDate: Date) => void;
+  onSubmit: (value: CreateHabitInput) => void;
   editingTracking?: Habit;
 }
 
-export const TrackingFormModal = ({
+export const HabitFormModal = ({
   isVisible,
   onClose,
   onSubmit,
   editingTracking,
-}: TrackingFormModalProps) => {
+}: HabitFormModalProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   const [title, setTitle] = useState("");
-  const [selectedType, setSelectedType] = useState<PeriodType>("day");
+  const [selectedType, setSelectedType] = useState<HabitFrequency>("daily");
   const [startDate] = useState(new Date());
 
   // todo: retravailler par rappoer à editingTracking reçu en props
@@ -36,7 +35,7 @@ export const TrackingFormModal = ({
       setSelectedType(editingTracking.type); // editingTracking.frequency
     } else {
       setTitle("");
-      setSelectedType("day");
+      setSelectedType("daily");
     }
   }, [editingTracking, isVisible]);
 
@@ -46,29 +45,30 @@ export const TrackingFormModal = ({
       return;
     }
 
-    console.log(editingTracking ? "Édition" : "Ajout", "du tracking:");
-    console.log("- Titre:", title);
-    console.log("- Type:", selectedType);
-    console.log("- Date de début:", startDate);
+    const habitAdded: CreateHabitInput = {
+      name: title,
+      frequency: selectedType,
+      createdAt: startDate.toISOString().split("T")[0],
+    };
 
-    onSubmit(title, selectedType, startDate);
+    onSubmit(habitAdded);
 
     setTitle("");
-    setSelectedType("day");
+    setSelectedType("daily");
     onClose();
   };
 
   const getDateLabel = () => {
     switch (selectedType) {
-      case "day":
+      case "daily":
         return startDate.toLocaleDateString("fr-FR", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         });
-      case "week":
+      case "weekly":
         return `Semaine en cours`;
-      case "month":
+      case "monthly":
         return startDate.toLocaleDateString("fr-FR", {
           month: "long",
           year: "numeric",
@@ -120,11 +120,11 @@ export const TrackingFormModal = ({
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  selectedType === "day" && {
+                  selectedType === "daily" && {
                     backgroundColor: colors.tint,
                   },
                 ]}
-                onPress={() => setSelectedType("day")}
+                onPress={() => setSelectedType("daily")}
               >
                 <ThemedText>Jour</ThemedText>
               </TouchableOpacity>
@@ -132,11 +132,11 @@ export const TrackingFormModal = ({
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  selectedType === "week" && {
+                  selectedType === "weekly" && {
                     backgroundColor: colors.tint,
                   },
                 ]}
-                onPress={() => setSelectedType("week")}
+                onPress={() => setSelectedType("weekly")}
               >
                 <ThemedText>Semaine</ThemedText>
               </TouchableOpacity>
@@ -144,11 +144,11 @@ export const TrackingFormModal = ({
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  selectedType === "month" && {
+                  selectedType === "monthly" && {
                     backgroundColor: colors.tint,
                   },
                 ]}
-                onPress={() => setSelectedType("month")}
+                onPress={() => setSelectedType("monthly")}
               >
                 <ThemedText>Mois</ThemedText>
               </TouchableOpacity>
