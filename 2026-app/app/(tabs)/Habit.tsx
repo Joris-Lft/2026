@@ -40,7 +40,7 @@ export default function HabitScreen() {
     try {
       await createHabit(user?.id, value); // Await createHabit
       console.log("Habit créé avec succès:", value);
-      setRefreshPeriodHabits((prev) => !prev); // Toggle to refresh PeriodHabit
+      setRefreshPeriodHabits((prev) => !prev);
     } catch (error) {
       console.error("Erreur lors de la création de l'habit:", error);
     }
@@ -91,7 +91,7 @@ export default function HabitScreen() {
         onClose={() => {
           setIsModalVisible(false);
         }}
-        onSubmit={addHabit}
+        onCreate={addHabit}
       />
     </ThemedView>
   );

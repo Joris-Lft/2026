@@ -5,9 +5,11 @@ import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
+  deleteHabit as deleteHabitService,
   getDailyHabits,
   getMonthlyHabits,
   getWeeklyHabits,
+  updateHabit,
 } from "@/services/habits";
 import {
   createHabitLog,
@@ -19,7 +21,12 @@ import {
   getWeeklyHabitLogs,
   getWeekNumber,
 } from "@/services/habits-logs";
-import { Habit, HabitFrequency, HabitLog } from "@/types/habits";
+import {
+  Habit,
+  HabitFrequency,
+  HabitLog,
+  UpdateHabitInput,
+} from "@/types/habits";
 import { PeriodData } from "@/types/tracking";
 import { getWeek } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -32,6 +39,7 @@ import {
   View,
 } from "react-native";
 import H2 from "../H2";
+import { HabitDeleteModal } from "./HabitDeleteModal";
 import { HabitFormModal } from "./HabitFormModal";
 
 // Props pour le composant
@@ -50,84 +58,87 @@ export const PeriodHabit = ({
   const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
 
-  const [trackings, setTrackings] = useState<Habit[]>([]);
+  const [habbits, setHabits] = useState<Habit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingTracking, setEditingTracking] = useState<Habit | undefined>(
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
+  const [editingHabbits, setEditingHabbits] = useState<Habit | undefined>(
     undefined,
   );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Charger les habits et leurs logs depuis Airtable selon la période
+  const loadHabitsAndLogs = async () => {
+    if (!user?.email) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const today = new Date();
+      let habits: Habit[] = [];
+      let logs: HabitLog[] = [];
+
+      // Charger les habits et les logs selon la période
+      switch (period) {
+        case "day":
+          [habits, logs] = await Promise.all([
+            getDailyHabits(user.email),
+            getDailyHabitLogs(user.email, today),
+          ]);
+          break;
+        case "week":
+          [habits, logs] = await Promise.all([
+            getWeeklyHabits(user.email),
+            getWeeklyHabitLogs(user.email, today),
+          ]);
+          break;
+        case "month":
+          [habits, logs] = await Promise.all([
+            getMonthlyHabits(user.email),
+            getMonthlyHabitLogs(user.email, today),
+          ]);
+          break;
+      }
+
+      // Créer un Map des logs par habit_id pour un accès rapide
+      const logsByHabitId = new Map<string, HabitLog>();
+
+      logs.forEach((log) => {
+        logsByHabitId.set(log.habit_id, log);
+      });
+
+      // Convertir les habits en habbits en vérifiant s'ils sont complétés
+      const initialHabits: Habit[] = habits.map((habit: Habit) => {
+        const log = logsByHabitId.get(habit.id);
+
+        return {
+          ...habit,
+          id: habit.id,
+          title: habit.name,
+          completed: !!log,
+          logId: log?.id,
+        };
+      });
+      setHabits(initialHabits);
+    } catch (error) {
+      console.error(`Error loading ${period} habits and logs:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadHabitsAndLogs = async () => {
-      if (!user?.email) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const today = new Date();
-        let habits: Habit[] = [];
-        let logs: HabitLog[] = [];
-
-        // Charger les habits et les logs selon la période
-        switch (period) {
-          case "day":
-            [habits, logs] = await Promise.all([
-              getDailyHabits(user.email),
-              getDailyHabitLogs(user.email, today),
-            ]);
-            break;
-          case "week":
-            [habits, logs] = await Promise.all([
-              getWeeklyHabits(user.email),
-              getWeeklyHabitLogs(user.email, today),
-            ]);
-            break;
-          case "month":
-            [habits, logs] = await Promise.all([
-              getMonthlyHabits(user.email),
-              getMonthlyHabitLogs(user.email, today),
-            ]);
-            break;
-        }
-
-        // Créer un Map des logs par habit_id pour un accès rapide
-        const logsByHabitId = new Map<string, HabitLog>();
-
-        logs.forEach((log) => {
-          logsByHabitId.set(log.habit_id, log);
-        });
-
-        // Convertir les habits en trackings en vérifiant s'ils sont complétés
-        const initialTrackings: Habit[] = habits.map((habit: Habit) => {
-          const log = logsByHabitId.get(habit.id);
-
-          return {
-            ...habit,
-            id: habit.id,
-            title: habit.name,
-            completed: !!log,
-            logId: log?.id,
-          };
-        });
-        setTrackings(initialTrackings);
-      } catch (error) {
-        console.error(`Error loading ${period} habits and logs:`, error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadHabitsAndLogs();
   }, [user?.email, period, refreshTrigger]);
 
-  // Fonction pour cocher/décocher un tracking
-  const toggleTracking = async (tracking: Habit) => {
+  // Fonction pour cocher/décocher un habit
+  const toggleHabit = async (habit: Habit) => {
     if (!user?.email) return;
 
-    const isCurrentlyCompleted = tracking.completed;
+    const isCurrentlyCompleted = habit.completed;
     const today = new Date();
 
     // Déterminer la fréquence et la période selon le type de période
@@ -150,13 +161,13 @@ export const PeriodHabit = ({
     }
 
     try {
-      if (isCurrentlyCompleted && tracking.logId) {
+      if (isCurrentlyCompleted && habit.logId) {
         // Supprimer le log si l'habit est déjà complété
-        const result = await deleteHabitLog(tracking.logId);
+        const result = await deleteHabitLog(habit.logId);
         if (result.success) {
-          setTrackings((prev) =>
+          setHabits((prev) =>
             prev.map((t) =>
-              t.id === tracking.id
+              t.id === habit.id
                 ? { ...t, completed: false, logId: undefined }
                 : t,
             ),
@@ -167,15 +178,15 @@ export const PeriodHabit = ({
       } else {
         // Créer un nouveau log si l'habit n'est pas complété
         const result = await createHabitLog({
-          habit_id: tracking.id,
+          habit_id: habit.id,
           user_id: user.id,
           frequency: frequency,
           period: periodValue,
         });
         if (result.log) {
-          setTrackings((prev) =>
+          setHabits((prev) =>
             prev.map((t) =>
-              t.id === tracking.id
+              t.id === habit.id
                 ? { ...t, completed: true, logId: result.log!.id }
                 : t,
             ),
@@ -185,12 +196,12 @@ export const PeriodHabit = ({
         }
       }
     } catch (error) {
-      console.error("Error toggling tracking:", error);
+      console.error("Error toggling habbits:", error);
     }
   };
 
-  // Trier les trackings : non complétés en haut, complétés en bas
-  const sortedTrackings = [...trackings].sort(
+  // Trier les habbits : non complétés en haut, complétés en bas
+  const sortedHabits = [...habbits].sort(
     (a, b) => Number(a.completed) - Number(b.completed),
   );
 
@@ -210,18 +221,38 @@ export const PeriodHabit = ({
     }
   };
 
-  const editHabit = (id: string) => {
-    // todo: appeler service updateHabit
-    // const tracking = trackings.find((t) => t.id === id);
-    // if (tracking) {
-    //   setEditingTracking(tracking);
-    //   setIsModalVisible(true);
-    // }
+  const editHabit = async (value: UpdateHabitInput) => {
+    if (!value?.id) {
+      // setIsLoading(false);
+      return;
+    }
+    try {
+      await updateHabit(value);
+      loadHabitsAndLogs();
+    } catch (error) {
+      console.error("Erreur lors de la modification de l'habit:", error);
+    }
+    setIsModalVisible(false);
   };
 
-  const deleteHabit = (id: string) => {
-    // todo: appeler service deleteHabit
-    console.log("Supprimer le tracking:", id);
+  const handleDeletePress = (habit: Habit) => {
+    setHabitToDelete(habit);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    if (habitToDelete) {
+      try {
+        await deleteHabitService(habitToDelete.id);
+        setHabitToDelete(null);
+        setIsDeleteModalVisible(false);
+        loadHabitsAndLogs();
+        setIsDeleting(false);
+      } catch (error) {
+        console.error("Erreur lors de la suppression de l'habit:", error);
+      }
+    }
   };
 
   return (
@@ -236,7 +267,7 @@ export const PeriodHabit = ({
               Chargement des habits...
             </ThemedText>
           </View>
-        ) : trackings.length === 0 ? (
+        ) : habbits.length === 0 ? (
           <View style={styles.emptyContainer}>
             <ThemedText style={styles.emptyText}>
               Aucun habit pour le moment
@@ -244,16 +275,16 @@ export const PeriodHabit = ({
           </View>
         ) : (
           <FlatList
-            data={sortedTrackings}
+            data={sortedHabits}
             renderItem={({ item }: { item: Habit }) => (
               <TouchableOpacity
                 style={[
-                  styles.trackingItem,
+                  styles.habbitItem,
                   {
                     backgroundColor: colors.background,
                   },
                 ]}
-                onPress={() => !isEditMode && toggleTracking(item)}
+                onPress={() => !isEditMode && toggleHabit(item)}
                 activeOpacity={0.7}
               >
                 <View
@@ -269,7 +300,7 @@ export const PeriodHabit = ({
                 </View>
                 <ThemedText
                   style={[
-                    styles.trackingTitle,
+                    styles.habbitTitle,
                     item.completed && styles.completedText,
                   ]}
                 >
@@ -282,7 +313,7 @@ export const PeriodHabit = ({
                       style={styles.iconButton}
                       onPress={() => {
                         setIsModalVisible(true);
-                        setEditingTracking(item);
+                        setEditingHabbits(item);
                       }}
                       activeOpacity={0.7}
                     >
@@ -291,7 +322,7 @@ export const PeriodHabit = ({
 
                     <TouchableOpacity
                       style={styles.iconButton}
-                      onPress={() => deleteHabit(item.id)}
+                      onPress={() => handleDeletePress(item)}
                       activeOpacity={0.7}
                     >
                       <IconSymbol name="trash" size={20} color="#ef4444" />
@@ -312,9 +343,18 @@ export const PeriodHabit = ({
         onClose={() => {
           setIsModalVisible(false);
         }}
-        onSubmit={editHabit}
-        editingTracking={editingTracking}
+        onUpdate={editHabit}
+        editingHabbits={editingHabbits}
       />
+      {habitToDelete && (
+        <HabitDeleteModal
+          loading={isDeleting}
+          visible={isDeleteModalVisible}
+          onClose={() => setIsDeleteModalVisible(false)}
+          onConfirm={() => handleConfirmDelete()}
+          habitName={habitToDelete.name}
+        />
+      )}
     </ThemedView>
   );
 };
@@ -336,13 +376,13 @@ const styles = StyleSheet.create({
   list: {
     gap: 0,
   },
-  trackingItem: {
+  habbitItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
     gap: 12,
   },
-  trackingTitle: {
+  habbitTitle: {
     flex: 1,
     fontSize: 16,
   },

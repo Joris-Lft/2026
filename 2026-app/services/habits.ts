@@ -184,10 +184,10 @@ export async function getMonthlyHabits(userId: string): Promise<Habit[]> {
  * @returns L'habit mis à jour ou null en cas d'erreur
  */
 export async function updateHabit(
-  habitId: string,
   updates: UpdateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
+    console.log("SERVICE", updates);
     const fields: Record<string, any> = {};
 
     if (updates.name !== undefined) {
@@ -197,7 +197,7 @@ export async function updateHabit(
       fields[AIRTABLE_HABITS_FREQUENCY_FIELD] = updates.frequency;
     }
 
-    const [record] = await habitsTable.update([{ id: habitId, fields }]);
+    const [record] = await habitsTable.update([{ id: updates.id, fields }]);
 
     const habit: Habit = {
       id: record.id,

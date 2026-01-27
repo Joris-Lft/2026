@@ -2,7 +2,12 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { CreateHabitInput, Habit, HabitFrequency } from "@/types/habits";
+import {
+  CreateHabitInput,
+  Habit,
+  HabitFrequency,
+  UpdateHabitInput,
+} from "@/types/habits";
 import { useEffect, useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import Modal from "react-native-modal";
@@ -10,34 +15,40 @@ import Modal from "react-native-modal";
 interface HabitFormModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onSubmit: (value: CreateHabitInput) => void;
-  editingTracking?: Habit;
+  onCreate?: (value: CreateHabitInput) => void;
+  onUpdate?: (value: UpdateHabitInput) => void;
+  editingHabbits?: Habit;
 }
 
 export const HabitFormModal = ({
   isVisible,
   onClose,
-  onSubmit,
-  editingTracking,
+  onCreate,
+  onUpdate,
+  editingHabbits,
 }: HabitFormModalProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState<HabitFrequency>("daily");
+  const [date, setDate] = useState(new Date());
   const [startDate] = useState(new Date());
 
   // todo: retravailler par rappoer à editingTracking reçu en props
   // plus besoin de passer par un state intermédiaire
   useEffect(() => {
-    if (editingTracking) {
-      setTitle(editingTracking.title); // editingTracking.name
-      setSelectedType(editingTracking.type); // editingTracking.frequency
+    if (editingHabbits) {
+      console.log(editingHabbits);
+      setTitle(editingHabbits.title); // editingTracking.name
+      setSelectedType(editingHabbits.frequency); // editingTracking.frequency
+      setDate(new Date(editingHabbits.created_at));
     } else {
       setTitle("");
       setSelectedType("daily");
+      setDate(new Date());
     }
-  }, [editingTracking, isVisible]);
+  }, [editingHabbits, isVisible]);
 
   const handleSubmit = () => {
     if (!title.trim()) {
@@ -45,31 +56,53 @@ export const HabitFormModal = ({
       return;
     }
 
-    const habitAdded: CreateHabitInput = {
-      name: title,
-      frequency: selectedType,
-      createdAt: startDate.toISOString().split("T")[0],
-    };
+    if (editingHabbits) {
+      const habitEdited: UpdateHabitInput = {
+        id: editingHabbits.id,
+        name: title,
+        frequency: selectedType,
+        createdAt: startDate.toISOString().split("T")[0],
+      };
 
-    onSubmit(habitAdded);
+      onUpdate?.(habitEdited);
+    } else {
+      const habitAdded: CreateHabitInput = {
+        name: title,
+        frequency: selectedType,
+        createdAt: startDate.toISOString().split("T")[0],
+      };
+
+      onCreate?.(habitAdded);
+    }
 
     setTitle("");
     setSelectedType("daily");
+    setDate(new Date());
     onClose();
   };
 
   const getDateLabel = () => {
+    const displayDate = editingHabbits
+      ? new Date(editingHabbits.created_at)
+      : startDate;
+
     switch (selectedType) {
       case "daily":
-        return startDate.toLocaleDateString("fr-FR", {
+        return displayDate.toLocaleDateString("fr-FR", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         });
       case "weekly":
-        return `Semaine en cours`;
+        const firstDayOfYear = new Date(displayDate.getFullYear(), 0, 1);
+        const pastDaysOfYear =
+          (displayDate.getTime() - firstDayOfYear.getTime()) / 86400000;
+        const weekNumber = Math.ceil(
+          (pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7,
+        );
+        return `Semaine ${weekNumber}`;
       case "monthly":
-        return startDate.toLocaleDateString("fr-FR", {
+        return displayDate.toLocaleDateString("fr-FR", {
           month: "long",
           year: "numeric",
         });
@@ -86,7 +119,7 @@ export const HabitFormModal = ({
       <ThemedView style={styles.modalContent}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>
-            {editingTracking
+            {editingHabbits
               ? "Modifier le tracking"
               : "Ajouter un tracking"}{" "}
           </ThemedText>
@@ -186,7 +219,7 @@ export const HabitFormModal = ({
             onPress={handleSubmit}
           >
             <ThemedText style={styles.submitButtonText}>
-              {editingTracking ? "Modifier" : "Ajouter"}{" "}
+              {editingHabbits ? "Modifier" : "Ajouter"}{" "}
             </ThemedText>
           </TouchableOpacity>
         </View>
