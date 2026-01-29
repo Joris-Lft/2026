@@ -35,13 +35,11 @@ export const HabitFormModal = ({
   const [date, setDate] = useState(new Date());
   const [startDate] = useState(new Date());
 
-  // todo: retravailler par rappoer à editingTracking reçu en props
-  // plus besoin de passer par un state intermédiaire
   useEffect(() => {
     if (editingHabbits) {
       console.log(editingHabbits);
-      setTitle(editingHabbits.title); // editingTracking.name
-      setSelectedType(editingHabbits.frequency); // editingTracking.frequency
+      setTitle(editingHabbits.title);
+      setSelectedType(editingHabbits.frequency);
       setDate(new Date(editingHabbits.created_at));
     } else {
       setTitle("");

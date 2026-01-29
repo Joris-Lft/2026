@@ -54,12 +54,12 @@ export function HabitDeleteModal({
               styles.button,
               styles.buttonConfirm,
               { backgroundColor: colors.tint },
-              loading && { opacity: 0.6 }, // ← Opacité réduite pendant loading
+              loading && { opacity: 0.6 },
             ]}
             onPress={onConfirm}
             disabled={loading}
           >
-            {loading ? ( // ← Affiche le loader si loading
+            {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.textStyle}>Oui</Text>
@@ -73,7 +73,6 @@ export function HabitDeleteModal({
 
 const styles = StyleSheet.create({
   modal: {
-    // ← Ajoute ce style
     justifyContent: "center",
     margin: 0,
     paddingHorizontal: 20,

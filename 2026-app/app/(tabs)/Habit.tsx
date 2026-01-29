@@ -34,11 +34,10 @@ export default function HabitScreen() {
 
   const addHabit = async (value: CreateHabitInput) => {
     if (!user?.id) {
-      // setIsLoading(false);
       return;
     }
     try {
-      await createHabit(user?.id, value); // Await createHabit
+      await createHabit(user?.id, value);
       console.log("Habit créé avec succès:", value);
       setRefreshPeriodHabits((prev) => !prev);
     } catch (error) {
