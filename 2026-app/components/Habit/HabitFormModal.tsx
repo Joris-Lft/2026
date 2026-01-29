@@ -37,7 +37,6 @@ export const HabitFormModal = ({
 
   useEffect(() => {
     if (editingHabbits) {
-      console.log(editingHabbits);
       setTitle(editingHabbits.title);
       setSelectedType(editingHabbits.frequency);
       setDate(new Date(editingHabbits.created_at));

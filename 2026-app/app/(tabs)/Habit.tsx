@@ -38,7 +38,6 @@ export default function HabitScreen() {
     }
     try {
       await createHabit(user?.id, value);
-      console.log("Habit créé avec succès:", value);
       setRefreshPeriodHabits((prev) => !prev);
     } catch (error) {
       console.error("Erreur lors de la création de l'habit:", error);

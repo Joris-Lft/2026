@@ -18,7 +18,6 @@ export async function createHabit(
   habitData: CreateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
-    console.log("habitData", habitData);
     const fields: Record<string, any> = {
       [AIRTABLE_HABITS_NAME_FIELD]: habitData.name,
       [AIRTABLE_HABITS_FREQUENCY_FIELD]: habitData.frequency,
@@ -187,7 +186,6 @@ export async function updateHabit(
   updates: UpdateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
-    console.log("SERVICE", updates);
     const fields: Record<string, any> = {};
 
     if (updates.name !== undefined) {

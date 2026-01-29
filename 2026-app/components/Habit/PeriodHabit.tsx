@@ -196,7 +196,7 @@ export const PeriodHabit = ({
         }
       }
     } catch (error) {
-      console.error("Error toggling habbits:", error);
+      console.error("Error toggling habit:", error);
     }
   };
 
@@ -221,9 +221,9 @@ export const PeriodHabit = ({
     }
   };
 
+  // Mettre à jour un habit
   const editHabit = async (value: UpdateHabitInput) => {
     if (!value?.id) {
-      // setIsLoading(false);
       return;
     }
     try {
@@ -235,11 +235,13 @@ export const PeriodHabit = ({
     setIsModalVisible(false);
   };
 
+  // Ouvrir la modale de suppression
   const handleDeletePress = (habit: Habit) => {
     setHabitToDelete(habit);
     setIsDeleteModalVisible(true);
   };
 
+  // Confirmer la suppression de l'habit
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     if (habitToDelete) {
