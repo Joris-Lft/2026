@@ -25,7 +25,7 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}
     >
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="Index"
         options={{
           title: "Accueil",
@@ -33,8 +33,8 @@ export default function TabLayout() {
             <IconSymbol size={28} name="house.fill" color={color} />
           ),
         }}
-      />
-      <Tabs.Screen
+      /> */}
+      {/* <Tabs.Screen
         name="Perso"
         options={{
           title: "Perso",
@@ -42,8 +42,8 @@ export default function TabLayout() {
             <IconSymbol size={28} name="person.fill" color={color} />
           ),
         }}
-      />
-      <Tabs.Screen
+      /> */}
+      {/* <Tabs.Screen
         name="Commun"
         options={{
           title: "Commun",
@@ -51,7 +51,7 @@ export default function TabLayout() {
             <IconSymbol size={28} name="person.2.fill" color={color} />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="Habit"
         options={{
