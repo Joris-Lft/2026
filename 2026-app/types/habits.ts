@@ -25,14 +25,19 @@ export interface Habit {
 export interface CreateHabitInput {
   name: string;
   frequency: HabitFrequency;
+  createdAt: string;
+  [key: string]: any;
 }
 
 /**
  * Données pour mettre à jour un habit existant
  */
 export interface UpdateHabitInput {
+  id: string;
   name?: string;
   frequency?: HabitFrequency;
+  createdAt?: string;
+  [key: string]: any;
 }
 
 /**

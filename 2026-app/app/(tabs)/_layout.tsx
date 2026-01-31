@@ -13,7 +13,7 @@ export default function TabLayout() {
 
   // Rediriger vers la connexion si l'utilisateur n'est pas authentifié
   if (!isLoading && !isAuthenticated) {
-    return <Redirect href="/login" />;
+    return <Redirect href="/Login" />;
   }
 
   return (
@@ -26,7 +26,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="Index"
         options={{
           title: "Accueil",
           tabBarIcon: ({ color }) => (
@@ -35,7 +35,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="perso"
+        name="Perso"
         options={{
           title: "Perso",
           tabBarIcon: ({ color }) => (
@@ -44,7 +44,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="commun"
+        name="Commun"
         options={{
           title: "Commun",
           tabBarIcon: ({ color }) => (
@@ -53,16 +53,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tracking"
+        name="Habit"
         options={{
-          title: "Tracking",
+          title: "Habits",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chart.bar.fill" color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profil"
+        name="Profil"
         options={{
           title: "Profil",
           tabBarIcon: ({ color }) => (

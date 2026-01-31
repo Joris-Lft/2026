@@ -1,35 +1,29 @@
 import {
-  AIRTABLE_HABITS_USER_ID_FIELD,
-  AIRTABLE_HABITS_NAME_FIELD,
-  AIRTABLE_HABITS_FREQUENCY_FIELD,
-} from "./airtable-config";
-import {
+  CreateHabitInput,
   Habit,
   HabitFrequency,
-  CreateHabitInput,
   UpdateHabitInput,
 } from "@/types/habits";
+import { ISOStringFormat } from "date-fns";
 import { habitsTable } from "./airtable-client";
+import {
+  AIRTABLE_HABITS_CREATED_AT_FIELD,
+  AIRTABLE_HABITS_FREQUENCY_FIELD,
+  AIRTABLE_HABITS_NAME_FIELD,
+  AIRTABLE_HABITS_USER_ID_FIELD,
+} from "./airtable-config";
 
-/**
- * Crée un nouvel habit dans Airtable
- * @param userId - L'ID de l'utilisateur connecté
- * @param habitData - Les données de l'habit à créer
- * @returns L'habit créé ou null en cas d'erreur
- */
 export async function createHabit(
   userId: string,
-  habitData: CreateHabitInput
+  habitData: CreateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
     const fields: Record<string, any> = {
       [AIRTABLE_HABITS_NAME_FIELD]: habitData.name,
       [AIRTABLE_HABITS_FREQUENCY_FIELD]: habitData.frequency,
+      [AIRTABLE_HABITS_CREATED_AT_FIELD]: habitData.createdAt,
+      [AIRTABLE_HABITS_USER_ID_FIELD]: [userId],
     };
-
-    // Si user_id est un champ Link, passer un tableau avec l'ID
-    // Sinon, passer directement la valeur
-    fields[AIRTABLE_HABITS_USER_ID_FIELD] = userId;
 
     const [record] = await habitsTable.create([{ fields }]);
 
@@ -39,7 +33,12 @@ export async function createHabit(
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
+      created_at: record.fields[
+        AIRTABLE_HABITS_CREATED_AT_FIELD
+      ] as ISOStringFormat,
       ...record.fields,
     };
 
@@ -73,7 +72,9 @@ export async function getHabitsByUser(userId: string): Promise<Habit[]> {
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -87,7 +88,6 @@ export async function getHabitsByUser(userId: string): Promise<Habit[]> {
  * @param userId - L'email de l'utilisateur connecté
  * @returns Liste des habits quotidiens, triés par ordre alphabétique
  */
-// todo: ajouter la vérification si présence dans les logs
 export async function getDailyHabits(userId: string): Promise<Habit[]> {
   try {
     const records = await habitsTable
@@ -103,7 +103,9 @@ export async function getDailyHabits(userId: string): Promise<Habit[]> {
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -132,7 +134,9 @@ export async function getWeeklyHabits(userId: string): Promise<Habit[]> {
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -161,7 +165,9 @@ export async function getMonthlyHabits(userId: string): Promise<Habit[]> {
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
       ...record.fields,
     }));
   } catch (error) {
@@ -177,8 +183,7 @@ export async function getMonthlyHabits(userId: string): Promise<Habit[]> {
  * @returns L'habit mis à jour ou null en cas d'erreur
  */
 export async function updateHabit(
-  habitId: string,
-  updates: UpdateHabitInput
+  updates: UpdateHabitInput,
 ): Promise<{ habit: Habit | null; error?: string }> {
   try {
     const fields: Record<string, any> = {};
@@ -190,7 +195,7 @@ export async function updateHabit(
       fields[AIRTABLE_HABITS_FREQUENCY_FIELD] = updates.frequency;
     }
 
-    const [record] = await habitsTable.update([{ id: habitId, fields }]);
+    const [record] = await habitsTable.update([{ id: updates.id, fields }]);
 
     const habit: Habit = {
       id: record.id,
@@ -198,7 +203,9 @@ export async function updateHabit(
         ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
         : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
       name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+      frequency: record.fields[
+        AIRTABLE_HABITS_FREQUENCY_FIELD
+      ] as HabitFrequency,
       ...record.fields,
     };
 
@@ -218,7 +225,7 @@ export async function updateHabit(
  * @returns true si la suppression a réussi, false sinon
  */
 export async function deleteHabit(
-  habitId: string
+  habitId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await habitsTable.destroy([habitId]);

@@ -24,6 +24,8 @@ export const AIRTABLE_HABITS_NAME_FIELD =
   process.env.EXPO_PUBLIC_AIRTABLE_HABITS_NAME_FIELD || "name";
 export const AIRTABLE_HABITS_FREQUENCY_FIELD =
   process.env.EXPO_PUBLIC_AIRTABLE_HABITS_FREQUENCY_FIELD || "frequency";
+export const AIRTABLE_HABITS_CREATED_AT_FIELD =
+  process.env.EXPO_PUBLIC_AIRTABLE_HABITS_CREATED_AT_FIELD || "created_at";
 
 // Constantes pour la table HabitsLogs
 export const AIRTABLE_HABITS_LOGS_TABLE_NAME =
