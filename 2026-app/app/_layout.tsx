@@ -55,11 +55,11 @@ function RootLayoutContent() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name="login"
+          name="Login"
           options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
-          name="signup"
+          name="Signup"
           options={{ headerShown: false, gestureEnabled: false }}
         />
       </Stack>
