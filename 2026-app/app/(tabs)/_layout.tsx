@@ -26,6 +26,15 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="Index"
+        options={{
+          title: "Accueil",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="Habit"
         options={{
           title: "Habits",

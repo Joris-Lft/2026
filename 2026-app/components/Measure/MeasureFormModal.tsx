@@ -64,7 +64,6 @@ export const MeasureFormModal = ({
       weight: parseFloat(form.weight) || 0,
     };
     onCreate(measurement);
-    // Reset du formulaire à la fermeture
     setForm(INITIAL_FORM_STATE);
     onClose();
   };
@@ -73,16 +72,6 @@ export const MeasureFormModal = ({
     setForm(INITIAL_FORM_STATE);
     onClose();
   };
-
-  // Styles dynamiques isolés, calculés une fois par render
-  const inputStyle = [
-    styles.input,
-    {
-      backgroundColor: colors.background,
-      color: colors.text,
-      borderColor: colors.icon,
-    },
-  ];
 
   return (
     <Modal
