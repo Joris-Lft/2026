@@ -1,21 +1,22 @@
 import { MeasureFormModal } from "@/components/Measure/MeasureFormModal";
-import { MeasurementTable } from "@/components/Measure/MeasurementTable";
+import { MeasureGraph } from "@/components/Measure/MeasureGraph";
+import { MeasureTable } from "@/components/Measure/MeasureTable";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { CreateMeasurementInput, Measurement } from "@/types/measurements";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 const INITIAL_MEASUREMENTS: Measurement[] = [
   {
     id: "1",
     date: "2024-01-01",
-    thigh: 50,
-    arm: 30,
-    chest: 90,
-    waist: 70,
-    hip: 95,
-    weight: 60,
+    thigh: 40,
+    arm: 10,
+    chest: 70,
+    waist: 50,
+    hip: 75,
+    weight: 40,
   },
   {
     id: "2",
@@ -29,7 +30,37 @@ const INITIAL_MEASUREMENTS: Measurement[] = [
   },
   {
     id: "3",
-    date: "2024-02-10",
+    date: "2024-03-01",
+    thigh: 51,
+    arm: 31,
+    chest: 91,
+    waist: 71,
+    hip: 96,
+    weight: 61,
+  },
+  {
+    id: "4",
+    date: "2024-04-01",
+    thigh: 51,
+    arm: 31,
+    chest: 91,
+    waist: 71,
+    hip: 96,
+    weight: 61,
+  },
+  {
+    id: "5",
+    date: "2024-05-01",
+    thigh: 51,
+    arm: 31,
+    chest: 91,
+    waist: 71,
+    hip: 96,
+    weight: 61,
+  },
+  {
+    id: "6",
+    date: "2024-06-01",
     thigh: 51,
     arm: 31,
     chest: 91,
@@ -59,23 +90,27 @@ export default function MeasureScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">Mensurations</ThemedText>
+      <ScrollView>
+        <ThemedText type="title">Mensurations</ThemedText>
 
-      <View style={styles.headerButtons}>
-        <Pressable
-          onPress={() => setIsModalVisible(true)}
-          style={({ pressed }) => pressed && styles.pressed}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter une mensuration"
-        >
-          <ThemedText style={styles.linkText}>
-            + Ajouter une mensuration
-          </ThemedText>
-        </Pressable>
-      </View>
+        <View style={styles.headerButtons}>
+          <Pressable
+            onPress={() => setIsModalVisible(true)}
+            style={({ pressed }) => pressed && styles.pressed}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une mensuration"
+          >
+            <ThemedText style={styles.linkText}>
+              + Ajouter une mensuration
+            </ThemedText>
+          </Pressable>
+        </View>
 
-      <MeasurementTable measurements={measurements} />
+        <MeasureTable measurements={measurements} />
+
+        <MeasureGraph measurements={measurements} />
+      </ScrollView>
 
       {isModalVisible && (
         <MeasureFormModal

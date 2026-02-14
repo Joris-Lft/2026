@@ -27,7 +27,7 @@ const formatValue = (value: number, key: MeasurementKey) =>
 
 const STICKY_COLUMN_WIDTH = 80;
 
-export const MeasurementTable = ({ measurements }: MeasurementTableProps) => {
+export const MeasureTable = ({ measurements }: MeasurementTableProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
