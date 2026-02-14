@@ -130,6 +130,5 @@ const styles = StyleSheet.create({
   },
   stickyCell: {
     textAlign: "center",
-    // paddingLeft: 20,
   },
 });
