@@ -6,4 +6,3 @@ export default function Index() {
   // renverra automatiquement vers /Login si nécessaire.
   return <Redirect href="/Habit" />;
 }
-
