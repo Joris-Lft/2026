@@ -1,44 +1,40 @@
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import {
-  Measurement,
-  MeasurementKey,
-  MeasurementType,
-} from "@/types/measurements";
+import { Measure, MeasureKey, MeasureType } from "@/types/measures";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-interface MeasurementTableProps {
-  measurements: Measurement[];
+interface MeasureTableProps {
+  measures: Measure[];
 }
 
-const MEASUREMENT_TYPES: MeasurementType[] = [
+const MEASURE_TYPES: MeasureType[] = [
   { key: "thigh", label: "Cuisse" },
   { key: "arm", label: "Bras" },
-  { key: "chest", label: "Poitrine" },
+  { key: "bust", label: "Poitrine" },
   { key: "waist", label: "Taille" },
   { key: "hip", label: "Hanche" },
   { key: "weight", label: "Poids" },
 ];
 
-const formatValue = (value: number, key: MeasurementKey) =>
+const formatValue = (value: number, key: MeasureKey) =>
   `${value} ${key === "weight" ? "kg" : "cm"}`;
 
 const STICKY_COLUMN_WIDTH = 80;
 
-export const MeasureTable = ({ measurements }: MeasurementTableProps) => {
+export const MeasureTable = ({ measures }: MeasureTableProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const measurementByDate = useMemo(
-    () => Object.fromEntries(measurements.map((m) => [m.date, m])),
-    [measurements],
+  const measureByDate = useMemo(
+    () => Object.fromEntries(measures.map((m) => [m.date, m])),
+    [measures],
   );
 
   const dates = useMemo(
-    () => [...new Set(measurements.map((m) => m.date))].sort(),
-    [measurements],
+    () => [...new Set(measures.map((m) => m.date))].sort(),
+    [measures],
   );
 
   return (
@@ -54,7 +50,7 @@ export const MeasureTable = ({ measurements }: MeasurementTableProps) => {
             Mesure
           </ThemedText>
         </View>
-        {MEASUREMENT_TYPES.map((type) => (
+        {MEASURE_TYPES.map((type) => (
           <View key={type.key} style={styles.row}>
             <ThemedText style={[styles.cell, styles.stickyCell]}>
               {type.label}
@@ -72,15 +68,13 @@ export const MeasureTable = ({ measurements }: MeasurementTableProps) => {
               </ThemedText>
             ))}
           </View>
-          {MEASUREMENT_TYPES.map((type) => (
+          {MEASURE_TYPES.map((type) => (
             <View key={type.key} style={styles.row}>
               {dates.map((date) => {
-                const measurement = measurementByDate[date];
+                const measure = measureByDate[date];
                 return (
                   <ThemedText key={date} style={styles.cell}>
-                    {measurement
-                      ? formatValue(measurement[type.key], type.key)
-                      : "-"}
+                    {measure ? formatValue(measure[type.key], type.key) : "-"}
                   </ThemedText>
                 );
               })}

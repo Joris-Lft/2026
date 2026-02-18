@@ -3,90 +3,58 @@ import { MeasureGraph } from "@/components/Measure/MeasureGraph";
 import { MeasureTable } from "@/components/Measure/MeasureTable";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { CreateMeasurementInput, Measurement } from "@/types/measurements";
-import { useCallback, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { createMeasure, getMeasuresByUser } from "@/services/measures";
+import { CreateMeasureInput, Measure } from "@/types/measures";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-const INITIAL_MEASUREMENTS: Measurement[] = [
-  {
-    id: "1",
-    date: "2024-01-01",
-    thigh: 40,
-    arm: 10,
-    chest: 70,
-    waist: 50,
-    hip: 75,
-    weight: 40,
-  },
-  {
-    id: "2",
-    date: "2024-02-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "3",
-    date: "2024-03-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "4",
-    date: "2024-04-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "5",
-    date: "2024-05-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "6",
-    date: "2024-06-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-];
-
-const generateId = () => Date.now().toString();
-const getTodayDate = () => new Date().toISOString().split("T")[0];
+const todayDate = new Date().toISOString().split("T")[0];
 
 export default function MeasureScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [measurements, setMeasurements] =
-    useState<Measurement[]>(INITIAL_MEASUREMENTS);
+  const [measures, setMeasures] = useState<Measure[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  const addMeasurement = useCallback((value: CreateMeasurementInput) => {
-    const newMeasurement: Measurement = {
-      ...value,
-      id: generateId(),
-      date: getTodayDate(),
-    };
-    setMeasurements((prev) => [...prev, newMeasurement]);
+  // Charger les mensurations depuis Airtable
+  const loadMeasures = async () => {
+    if (!user?.email) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const today = new Date();
+      let measures: Measure[] = [];
+
+      // Charger les mensuraations
+      measures = await getMeasuresByUser(user.email);
+      setMeasures(measures);
+    } catch (error) {
+      console.error(`Error loading measures:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMeasures();
+  }, [user?.email]);
+
+  const addMeasure = async (value: CreateMeasureInput) => {
+    if (!user?.id) {
+      return;
+    }
+    try {
+      await createMeasure(user?.id, { ...value, date: todayDate });
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la création de la mensuration:", error);
+    }
     setIsModalVisible(false);
-  }, []);
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -107,16 +75,16 @@ export default function MeasureScreen() {
           </Pressable>
         </View>
 
-        <MeasureTable measurements={measurements} />
+        <MeasureTable measures={measures} />
 
-        <MeasureGraph measurements={measurements} />
+        <MeasureGraph measurements={measures} />
       </ScrollView>
 
       {isModalVisible && (
         <MeasureFormModal
           isVisible={isModalVisible}
           onClose={() => setIsModalVisible(false)}
-          onCreate={addMeasurement}
+          onCreate={addMeasure}
         />
       )}
     </ThemedView>

@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { CreateMeasurementInput } from "@/types/measurements";
+import { CreateMeasureInput } from "@/types/measures";
 import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import Modal from "react-native-modal";
@@ -10,7 +10,7 @@ import Modal from "react-native-modal";
 type MeasureFormModalProps = {
   isVisible: boolean;
   onClose: () => void;
-  onCreate: (value: CreateMeasurementInput) => void;
+  onCreate: (value: CreateMeasureInput) => void;
 };
 
 type FormState = {
@@ -55,10 +55,10 @@ export const MeasureFormModal = ({
   };
 
   const handleSubmit = () => {
-    const measurement: CreateMeasurementInput = {
+    const measurement: CreateMeasureInput = {
       thigh: parseFloat(form.thigh) || 0,
       arm: parseFloat(form.arm) || 0,
-      chest: parseFloat(form.chest) || 0,
+      bust: parseFloat(form.chest) || 0,
       waist: parseFloat(form.waist) || 0,
       hip: parseFloat(form.hip) || 0,
       weight: parseFloat(form.weight) || 0,
