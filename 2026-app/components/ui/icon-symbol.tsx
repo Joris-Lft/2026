@@ -27,6 +27,7 @@ const MAPPING = {
   "person.2.fill": "people",
   "chart.bar.fill": "bar-chart",
   "person.circle.fill": "account-circle",
+  "ruler.fill": "straighten",
   trash: "delete",
   pencil: "edit",
 } as IconMapping;

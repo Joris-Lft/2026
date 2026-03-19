@@ -3,15 +3,27 @@ import { MeasureGraph } from "@/components/Measure/MeasureGraph";
 import { MeasureTable } from "@/components/Measure/MeasureTable";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { createMeasure, getMeasuresByUser } from "@/services/measures";
 import { CreateMeasureInput, Measure } from "@/types/measures";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 
 const todayDate = new Date().toISOString().split("T")[0];
 
 export default function MeasureScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+  const [isEditMode, setIsEditMode] = useState(false);
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [measures, setMeasures] = useState<Measure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,26 +70,52 @@ export default function MeasureScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView>
-        <ThemedText type="title">Mensurations</ThemedText>
+      <ScrollView style={{ width: "100%" }}>
+        <ThemedText type="title" style={{ paddingHorizontal: 20, textAlign: "center" }}>Mensurations</ThemedText>
 
         <View style={styles.headerButtons}>
-          <Pressable
-            onPress={() => setIsModalVisible(true)}
-            style={({ pressed }) => pressed && styles.pressed}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Ajouter une mensuration"
+          <TouchableOpacity
+            onPress={() => setIsEditMode(!isEditMode)}
+            activeOpacity={0.7}
           >
             <ThemedText style={styles.linkText}>
-              + Ajouter une mensuration
+              {isEditMode ? "Sortir du mode édition" : "Mode édition"}
             </ThemedText>
-          </Pressable>
+          </TouchableOpacity>
+
+          {isEditMode && (
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Ajouter une mensuration"
+            >
+              <ThemedText style={styles.linkText}>
+                + Ajouter une mensuration
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <MeasureTable measures={measures} />
-
-        <MeasureGraph measurements={measures} />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.tint} />
+            <ThemedText style={styles.loadingText}>
+              Chargement des habitudes...
+            </ThemedText>
+          </View>
+        ) : measures.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>
+              Aucune mensuration pour le moment
+            </ThemedText>
+          </View>
+        ) : (
+          <View>
+            <MeasureTable measures={measures} />
+            <MeasureGraph measurements={measures} />
+          </View>
+        )}
       </ScrollView>
 
       {isModalVisible && (
@@ -101,7 +139,7 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
@@ -113,5 +151,25 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: "center",
   },
 });
