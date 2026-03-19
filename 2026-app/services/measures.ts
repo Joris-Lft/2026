@@ -88,10 +88,10 @@ export async function getMeasuresByUser(userId: string): Promise<Measure[]> {
 }
 
 /**
- * Met à jour un habit existant
- * @param habitId - L'ID de l'habit à modifier
+ * Met à jour une mensuration existante
+ * @param habitId - L'ID de la mensuration à modifier
  * @param updates - Les champs à mettre à jour
- * @returns L'habit mis à jour ou null en cas d'erreur
+ * @returns La mensuration mise à jour ou null en cas d'erreur
  */
 export async function updateMeasure(
   updates: UpdateMeasureInput,
@@ -147,7 +147,7 @@ export async function updateMeasure(
 }
 
 /**
- * Supprime un habit
+ * Supprime une mensuration
  * @param measureId - L'ID de la mensuration à supprimer
  * @returns true si la suppression a réussi, false sinon
  */

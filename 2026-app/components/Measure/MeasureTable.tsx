@@ -1,12 +1,16 @@
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Measure, MeasureKey, MeasureType } from "@/types/measures";
-import { useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface MeasureTableProps {
   measures: Measure[];
+  isEditMode?: boolean;
+  onDelete?: (measure: Measure) => void;
+  onEdit?: (measure: Measure) => void;
 }
 
 const MEASURE_TYPES: MeasureType[] = [
@@ -23,9 +27,15 @@ const formatValue = (value: number, key: MeasureKey) =>
 
 const STICKY_COLUMN_WIDTH = 80;
 
-export const MeasureTable = ({ measures }: MeasureTableProps) => {
+export const MeasureTable = ({
+  measures,
+  isEditMode,
+  onDelete,
+  onEdit,
+}: MeasureTableProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const [scrollableHeaderHeight, setScrollableHeaderHeight] = useState<number | undefined>();
 
   const measureByDate = useMemo(
     () => Object.fromEntries(measures.map((m) => [m.date, m])),
@@ -45,7 +55,7 @@ export const MeasureTable = ({ measures }: MeasureTableProps) => {
           { width: STICKY_COLUMN_WIDTH, backgroundColor: colors.background },
         ]}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, scrollableHeaderHeight ? { height: scrollableHeaderHeight } : undefined]}>
           <ThemedText style={[styles.headerCell, styles.stickyCell]}>
             Mesure
           </ThemedText>
@@ -61,11 +71,32 @@ export const MeasureTable = ({ measures }: MeasureTableProps) => {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={{ marginLeft: STICKY_COLUMN_WIDTH }}>
-          <View style={styles.header}>
+          <View
+            style={[styles.header, isEditMode && styles.headerWithActions]}
+            onLayout={(e) => setScrollableHeaderHeight(e.nativeEvent.layout.height)}
+          >
             {dates.map((date) => (
-              <ThemedText key={date} style={styles.headerCell}>
-                {new Date(date).toLocaleDateString()}
-              </ThemedText>
+              <View key={date} style={styles.headerCellContainer}>
+                <ThemedText style={styles.headerCell}>
+                  {new Date(date).toLocaleDateString()}
+                </ThemedText>
+                {isEditMode && measureByDate[date] && (
+                  <View style={styles.headerActions}>
+                    <TouchableOpacity
+                      onPress={() => onEdit?.(measureByDate[date])}
+                      hitSlop={6}
+                    >
+                      <IconSymbol name="pencil" size={14} color={colors.icon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => onDelete?.(measureByDate[date])}
+                      hitSlop={6}
+                    >
+                      <IconSymbol name="trash" size={14} color="#e53935" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             ))}
           </View>
           {MEASURE_TYPES.map((type) => (
@@ -105,11 +136,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
   },
+  headerWithActions: {
+    paddingBottom: 6,
+    alignItems: "center",
+  },
+  headerCellContainer: {
+    width: 100,
+    alignItems: "center",
+    gap: 6,
+  },
   headerCell: {
     fontWeight: "bold",
     fontSize: 12,
     width: 100,
     textAlign: "center",
+  },
+  headerActions: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
+    paddingBottom: 4,
   },
   row: {
     flexDirection: "row",

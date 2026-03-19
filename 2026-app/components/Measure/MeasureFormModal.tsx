@@ -2,8 +2,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { CreateMeasureInput } from "@/types/measures";
-import { useState } from "react";
+import { CreateMeasureInput, Measure, UpdateMeasureInput } from "@/types/measures";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import Modal from "react-native-modal";
 
@@ -11,6 +11,8 @@ type MeasureFormModalProps = {
   isVisible: boolean;
   onClose: () => void;
   onCreate: (value: CreateMeasureInput) => void;
+  initialMeasure?: Measure;
+  onUpdate?: (value: UpdateMeasureInput) => void;
 };
 
 type FormState = {
@@ -44,26 +46,57 @@ export const MeasureFormModal = ({
   isVisible,
   onClose,
   onCreate,
+  initialMeasure,
+  onUpdate,
 }: MeasureFormModalProps) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const isEditing = !!initialMeasure;
 
   const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE);
+
+  useEffect(() => {
+    if (initialMeasure) {
+      setForm({
+        thigh: String(initialMeasure.thigh),
+        arm: String(initialMeasure.arm),
+        chest: String(initialMeasure.bust),
+        waist: String(initialMeasure.waist),
+        hip: String(initialMeasure.hip),
+        weight: String(initialMeasure.weight),
+      });
+    } else {
+      setForm(INITIAL_FORM_STATE);
+    }
+  }, [initialMeasure]);
 
   const handleChange = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    const measurement: CreateMeasureInput = {
-      thigh: parseFloat(form.thigh) || 0,
-      arm: parseFloat(form.arm) || 0,
-      bust: parseFloat(form.chest) || 0,
-      waist: parseFloat(form.waist) || 0,
-      hip: parseFloat(form.hip) || 0,
-      weight: parseFloat(form.weight) || 0,
-    };
-    onCreate(measurement);
+    if (isEditing && onUpdate && initialMeasure) {
+      onUpdate({
+        id: initialMeasure.id,
+        date: initialMeasure.date,
+        thigh: parseFloat(form.thigh) || 0,
+        arm: parseFloat(form.arm) || 0,
+        bust: parseFloat(form.chest) || 0,
+        waist: parseFloat(form.waist) || 0,
+        hip: parseFloat(form.hip) || 0,
+        weight: parseFloat(form.weight) || 0,
+      });
+    } else {
+      const measurement: CreateMeasureInput = {
+        thigh: parseFloat(form.thigh) || 0,
+        arm: parseFloat(form.arm) || 0,
+        bust: parseFloat(form.chest) || 0,
+        waist: parseFloat(form.waist) || 0,
+        hip: parseFloat(form.hip) || 0,
+        weight: parseFloat(form.weight) || 0,
+      };
+      onCreate(measurement);
+    }
     setForm(INITIAL_FORM_STATE);
     onClose();
   };
@@ -82,7 +115,9 @@ export const MeasureFormModal = ({
     >
       <ThemedView style={styles.modalContent}>
         <View style={styles.header}>
-          <ThemedText style={styles.title}>Ajouter des mensurations</ThemedText>
+          <ThemedText style={styles.title}>
+            {isEditing ? "Modifier les mensurations" : "Ajouter des mensurations"}
+          </ThemedText>
           <Pressable
             onPress={handleClose}
             hitSlop={8}
@@ -127,7 +162,9 @@ export const MeasureFormModal = ({
             onPress={handleSubmit}
             accessibilityRole="button"
           >
-            <ThemedText style={styles.submitButtonText}>Ajouter</ThemedText>
+            <ThemedText style={styles.submitButtonText}>
+              {isEditing ? "Modifier" : "Ajouter"}
+            </ThemedText>
           </Pressable>
         </View>
       </ThemedView>

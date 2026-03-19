@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { createMeasure, getMeasuresByUser } from "@/services/measures";
-import { CreateMeasureInput, Measure } from "@/types/measures";
+import { createMeasure, deleteMeasure, getMeasuresByUser, updateMeasure } from "@/services/measures";
+import { CreateMeasureInput, Measure, UpdateMeasureInput } from "@/types/measures";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,6 +25,7 @@ export default function MeasureScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedMeasure, setSelectedMeasure] = useState<Measure | undefined>();
   const [measures, setMeasures] = useState<Measure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -66,6 +67,31 @@ export default function MeasureScreen() {
       console.error("Erreur lors de la création de la mensuration:", error);
     }
     setIsModalVisible(false);
+  };
+
+  const handleEdit = (measure: Measure) => {
+    setSelectedMeasure(measure);
+    setIsModalVisible(true);
+  };
+
+  const handleUpdate = async (value: UpdateMeasureInput) => {
+    try {
+      await updateMeasure(value);
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la modification de la mensuration:", error);
+    }
+    setSelectedMeasure(undefined);
+    setIsModalVisible(false);
+  };
+
+  const handleDelete = async (measure: Measure) => {
+    try {
+      await deleteMeasure(measure.id);
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la mensuration:", error);
+    }
   };
 
   return (
@@ -112,7 +138,12 @@ export default function MeasureScreen() {
           </View>
         ) : (
           <View>
-            <MeasureTable measures={measures} />
+            <MeasureTable
+                measures={measures}
+                isEditMode={isEditMode}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             <MeasureGraph measurements={measures} />
           </View>
         )}
@@ -121,8 +152,13 @@ export default function MeasureScreen() {
       {isModalVisible && (
         <MeasureFormModal
           isVisible={isModalVisible}
-          onClose={() => setIsModalVisible(false)}
+          onClose={() => {
+            setIsModalVisible(false);
+            setSelectedMeasure(undefined);
+          }}
           onCreate={addMeasure}
+          initialMeasure={selectedMeasure}
+          onUpdate={handleUpdate}
         />
       )}
     </ThemedView>
