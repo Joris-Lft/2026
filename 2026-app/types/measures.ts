@@ -9,7 +9,7 @@ export type Measure = {
   weight: number;
 };
 
-export type CreateMeasureInput = Omit<Measure, "id">;
+export type CreateMeasureInput = Omit<Measure, "id" | "date">;
 
 export type UpdateMeasureInput = Measure;
 

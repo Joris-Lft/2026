@@ -5,8 +5,17 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { createMeasure, deleteMeasure, getMeasuresByUser, updateMeasure } from "@/services/measures";
-import { CreateMeasureInput, Measure, UpdateMeasureInput } from "@/types/measures";
+import {
+  createMeasure,
+  deleteMeasure,
+  getMeasuresByUser,
+  updateMeasure,
+} from "@/services/measures";
+import {
+  CreateMeasureInput,
+  Measure,
+  UpdateMeasureInput,
+} from "@/types/measures";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -61,7 +70,7 @@ export default function MeasureScreen() {
       return;
     }
     try {
-      await createMeasure(user?.id, { ...value, date: todayDate });
+      await createMeasure(user?.id, value, todayDate);
       loadMeasures();
     } catch (error) {
       console.error("Erreur lors de la création de la mensuration:", error);
@@ -96,8 +105,10 @@ export default function MeasureScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView style={{ width: "100%" }}>
-        <ThemedText type="title" style={{ paddingHorizontal: 20, textAlign: "center" }}>Mensurations</ThemedText>
+      <ScrollView style={styles.scrollView}>
+        <ThemedText type="title" style={styles.title}>
+          Mensurations
+        </ThemedText>
 
         <View style={styles.headerButtons}>
           <TouchableOpacity
@@ -139,11 +150,11 @@ export default function MeasureScreen() {
         ) : (
           <View>
             <MeasureTable
-                measures={measures}
-                isEditMode={isEditMode}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              measures={measures}
+              isEditMode={isEditMode}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
             <MeasureGraph measurements={measures} />
           </View>
         )}
@@ -166,6 +177,13 @@ export default function MeasureScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    width: "100%",
+  },
+  title: {
+    paddingHorizontal: 20,
+    textAlign: "center",
+  },
   container: {
     flex: 1,
     alignItems: "center",

@@ -19,10 +19,11 @@ import {
 export async function createMeasure(
   userId: string,
   measureData: CreateMeasureInput,
+  date: string,
 ): Promise<{ measure: Measure | null; error?: string }> {
   try {
     const fields: Record<string, any> = {
-      [AIRTABLE_MEASURES_DATE_FIELD]: measureData.date,
+      [AIRTABLE_MEASURES_DATE_FIELD]: date,
       [AIRTABLE_MEASURES_WEIGHT_FIELD]: measureData.weight,
       [AIRTABLE_MEASURES_ARM_FIELD]: measureData.arm,
       [AIRTABLE_MEASURES_BUST_FIELD]: measureData.bust,

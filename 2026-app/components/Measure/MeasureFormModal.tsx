@@ -75,27 +75,19 @@ export const MeasureFormModal = ({
   };
 
   const handleSubmit = () => {
+    const fields: CreateMeasureInput = {
+      thigh: parseFloat(form.thigh) || 0,
+      arm: parseFloat(form.arm) || 0,
+      bust: parseFloat(form.chest) || 0,
+      waist: parseFloat(form.waist) || 0,
+      hip: parseFloat(form.hip) || 0,
+      weight: parseFloat(form.weight) || 0,
+    };
+
     if (isEditing && onUpdate && initialMeasure) {
-      onUpdate({
-        id: initialMeasure.id,
-        date: initialMeasure.date,
-        thigh: parseFloat(form.thigh) || 0,
-        arm: parseFloat(form.arm) || 0,
-        bust: parseFloat(form.chest) || 0,
-        waist: parseFloat(form.waist) || 0,
-        hip: parseFloat(form.hip) || 0,
-        weight: parseFloat(form.weight) || 0,
-      });
+      onUpdate({ ...fields, id: initialMeasure.id, date: initialMeasure.date });
     } else {
-      const measurement: CreateMeasureInput = {
-        thigh: parseFloat(form.thigh) || 0,
-        arm: parseFloat(form.arm) || 0,
-        bust: parseFloat(form.chest) || 0,
-        waist: parseFloat(form.waist) || 0,
-        hip: parseFloat(form.hip) || 0,
-        weight: parseFloat(form.weight) || 0,
-      };
-      onCreate(measurement);
+      onCreate(fields);
     }
     setForm(INITIAL_FORM_STATE);
     onClose();
