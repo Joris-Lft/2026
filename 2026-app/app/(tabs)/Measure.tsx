@@ -63,7 +63,7 @@ export default function MeasureScreen() {
 
   useEffect(() => {
     loadMeasures();
-  }, [user?.email]);
+  }, []);
 
   const addMeasure = async (value: CreateMeasureInput) => {
     if (!user?.id) {
