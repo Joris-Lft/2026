@@ -266,13 +266,13 @@ export const PeriodHabit = ({
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.tint} />
             <ThemedText style={styles.loadingText}>
-              Chargement des habits...
+              Chargement des habitudes...
             </ThemedText>
           </View>
         ) : habbits.length === 0 ? (
           <View style={styles.emptyContainer}>
             <ThemedText style={styles.emptyText}>
-              Aucun habit pour le moment
+              Aucune habitude pour le moment
             </ThemedText>
           </View>
         ) : (

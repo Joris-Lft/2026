@@ -3,120 +3,173 @@ import { MeasureGraph } from "@/components/Measure/MeasureGraph";
 import { MeasureTable } from "@/components/Measure/MeasureTable";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { CreateMeasurementInput, Measurement } from "@/types/measurements";
-import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  createMeasure,
+  deleteMeasure,
+  getMeasuresByUser,
+  updateMeasure,
+} from "@/services/measures";
+import {
+  CreateMeasureInput,
+  Measure,
+  UpdateMeasureInput,
+} from "@/types/measures";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 
-const INITIAL_MEASUREMENTS: Measurement[] = [
-  {
-    id: "1",
-    date: "2024-01-01",
-    thigh: 40,
-    arm: 10,
-    chest: 70,
-    waist: 50,
-    hip: 75,
-    weight: 40,
-  },
-  {
-    id: "2",
-    date: "2024-02-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "3",
-    date: "2024-03-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "4",
-    date: "2024-04-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "5",
-    date: "2024-05-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-  {
-    id: "6",
-    date: "2024-06-01",
-    thigh: 51,
-    arm: 31,
-    chest: 91,
-    waist: 71,
-    hip: 96,
-    weight: 61,
-  },
-];
-
-const generateId = () => Date.now().toString();
-const getTodayDate = () => new Date().toISOString().split("T")[0];
+const todayDate = new Date().toISOString().split("T")[0];
 
 export default function MeasureScreen() {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [measurements, setMeasurements] =
-    useState<Measurement[]>(INITIAL_MEASUREMENTS);
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const addMeasurement = useCallback((value: CreateMeasurementInput) => {
-    const newMeasurement: Measurement = {
-      ...value,
-      id: generateId(),
-      date: getTodayDate(),
-    };
-    setMeasurements((prev) => [...prev, newMeasurement]);
-    setIsModalVisible(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedMeasure, setSelectedMeasure] = useState<Measure | undefined>();
+  const [measures, setMeasures] = useState<Measure[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  // Charger les mensurations depuis Airtable
+  const loadMeasures = async () => {
+    if (!user?.email) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const today = new Date();
+      let measures: Measure[] = [];
+
+      // Charger les mensuraations
+      measures = await getMeasuresByUser(user.email);
+      setMeasures(measures);
+    } catch (error) {
+      console.error(`Error loading measures:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMeasures();
   }, []);
+
+  const addMeasure = async (value: CreateMeasureInput) => {
+    if (!user?.id) {
+      return;
+    }
+    try {
+      await createMeasure(user?.id, value, todayDate);
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la création de la mensuration:", error);
+    }
+    setIsModalVisible(false);
+  };
+
+  const handleEdit = (measure: Measure) => {
+    setSelectedMeasure(measure);
+    setIsModalVisible(true);
+  };
+
+  const handleUpdate = async (value: UpdateMeasureInput) => {
+    try {
+      await updateMeasure(value);
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la modification de la mensuration:", error);
+    }
+    setSelectedMeasure(undefined);
+    setIsModalVisible(false);
+  };
+
+  const handleDelete = async (measure: Measure) => {
+    try {
+      await deleteMeasure(measure.id);
+      loadMeasures();
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la mensuration:", error);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView>
-        <ThemedText type="title">Mensurations</ThemedText>
+      <ScrollView style={styles.scrollView}>
+        <ThemedText type="title" style={styles.title}>
+          Mensurations
+        </ThemedText>
 
         <View style={styles.headerButtons}>
-          <Pressable
-            onPress={() => setIsModalVisible(true)}
-            style={({ pressed }) => pressed && styles.pressed}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Ajouter une mensuration"
+          <TouchableOpacity
+            onPress={() => setIsEditMode(!isEditMode)}
+            activeOpacity={0.7}
           >
             <ThemedText style={styles.linkText}>
-              + Ajouter une mensuration
+              {isEditMode ? "Sortir du mode édition" : "Mode édition"}
             </ThemedText>
-          </Pressable>
+          </TouchableOpacity>
+
+          {isEditMode && (
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Ajouter une mensuration"
+            >
+              <ThemedText style={styles.linkText}>
+                + Ajouter une mensuration
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <MeasureTable measurements={measurements} />
-
-        <MeasureGraph measurements={measurements} />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.tint} />
+            <ThemedText style={styles.loadingText}>
+              Chargement des habitudes...
+            </ThemedText>
+          </View>
+        ) : measures.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>
+              Aucune mensuration pour le moment
+            </ThemedText>
+          </View>
+        ) : (
+          <View>
+            <MeasureTable
+              measures={measures}
+              isEditMode={isEditMode}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+            <MeasureGraph measurements={measures} />
+          </View>
+        )}
       </ScrollView>
 
       {isModalVisible && (
         <MeasureFormModal
           isVisible={isModalVisible}
-          onClose={() => setIsModalVisible(false)}
-          onCreate={addMeasurement}
+          onClose={() => {
+            setIsModalVisible(false);
+            setSelectedMeasure(undefined);
+          }}
+          onCreate={addMeasure}
+          initialMeasure={selectedMeasure}
+          onUpdate={handleUpdate}
         />
       )}
     </ThemedView>
@@ -124,6 +177,13 @@ export default function MeasureScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    width: "100%",
+  },
+  title: {
+    paddingHorizontal: 20,
+    textAlign: "center",
+  },
   container: {
     flex: 1,
     alignItems: "center",
@@ -133,7 +193,7 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
@@ -145,5 +205,25 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: "center",
   },
 });

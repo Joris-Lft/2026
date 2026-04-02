@@ -1,18 +1,18 @@
 import { ThemedText } from "@/components/themed-text";
-import { Measurement, MeasurementKey } from "@/types/measurements";
+import { Measure, MeasureKey } from "@/types/measures";
 import { Inter_400Regular, useFonts } from "@expo-google-fonts/inter";
 import { useFont } from "@shopify/react-native-skia";
 import { StyleSheet, View } from "react-native";
 import { CartesianChart, Line } from "victory-native";
 
 type MeasureGraphProps = {
-  measurements: Measurement[];
+  measurements: Measure[];
 };
 
-const CM_METRICS: { key: MeasurementKey; color: string; label: string }[] = [
+const CM_METRICS: { key: MeasureKey; color: string; label: string }[] = [
   { key: "thigh", color: "#e74c3c", label: "Cuisse" },
   { key: "arm", color: "#3498db", label: "Bras" },
-  { key: "chest", color: "#2ecc71", label: "Poitrine" },
+  { key: "bust", color: "#2ecc71", label: "Poitrine" },
   { key: "waist", color: "#f39c12", label: "Taille" },
   { key: "hip", color: "#9b59b6", label: "Hanche" },
 ];
@@ -32,7 +32,7 @@ export const MeasureGraph = ({ measurements }: MeasureGraphProps) => {
     date: new Date(m.date).getTime(),
     thigh: m.thigh,
     arm: m.arm,
-    chest: m.chest,
+    bust: m.bust,
     waist: m.waist,
     hip: m.hip,
     weight: m.weight,
