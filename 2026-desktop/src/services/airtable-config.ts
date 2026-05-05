@@ -1,0 +1,30 @@
+export const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID || "";
+export const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY || "";
+
+export const AIRTABLE_TABLE_NAME = import.meta.env.VITE_AIRTABLE_TABLE_NAME || "Users";
+export const AIRTABLE_EMAIL_FIELD = import.meta.env.VITE_AIRTABLE_EMAIL_FIELD || "Email";
+export const AIRTABLE_PASSWORD_FIELD = import.meta.env.VITE_AIRTABLE_PASSWORD_FIELD || "Password";
+
+export const AIRTABLE_HABITS_TABLE_NAME = import.meta.env.VITE_AIRTABLE_HABITS_TABLE_NAME || "Habits";
+export const AIRTABLE_HABITS_USER_ID_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_USER_ID_FIELD || "user_id";
+export const AIRTABLE_HABITS_NAME_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_NAME_FIELD || "name";
+export const AIRTABLE_HABITS_FREQUENCY_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_FREQUENCY_FIELD || "frequency";
+export const AIRTABLE_HABITS_CREATED_AT_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_CREATED_AT_FIELD || "created_at";
+
+export const AIRTABLE_HABITS_LOGS_TABLE_NAME = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_TABLE_NAME || "HabitsLogs";
+export const AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD || "habit_id";
+export const AIRTABLE_HABITS_LOGS_USER_ID_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_USER_ID_FIELD || "user_id";
+export const AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD || "completed_at";
+export const AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD || "frequency";
+export const AIRTABLE_HABITS_LOGS_PERIOD_FIELD = import.meta.env.VITE_AIRTABLE_HABITS_LOGS_PERIOD_FIELD || "period";
+
+export const AIRTABLE_MEASURES_TABLE_NAME = import.meta.env.VITE_AIRTABLE_MEASURES_TABLE_NAME || "Measures";
+export const AIRTABLE_MEASURES_MEASURE_ID_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_MEASURE_ID_FIELD || "measure_id";
+export const AIRTABLE_MEASURES_USER_ID_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_USER_ID_FIELD || "user_id";
+export const AIRTABLE_MEASURES_DATE_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_DATE_FIELD || "date";
+export const AIRTABLE_MEASURES_WEIGHT_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_WEIGHT_FIELD || "weight";
+export const AIRTABLE_MEASURES_ARM_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_ARM_FIELD || "arm";
+export const AIRTABLE_MEASURES_BUST_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_BUST_FIELD || "bust";
+export const AIRTABLE_MEASURES_WAIST_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_WAIST_FIELD || "waist";
+export const AIRTABLE_MEASURES_HIP_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_HIP_FIELD || "hip";
+export const AIRTABLE_MEASURES_THIGH_FIELD = import.meta.env.VITE_AIRTABLE_MEASURES_THIGH_FIELD || "thigh";
