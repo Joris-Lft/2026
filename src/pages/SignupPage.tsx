@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
+import { Input } from "@/components/ui/Input";
+import { PageShell } from "@/components/ui/PageShell";
 import { createUser } from "@/services/airtable";
 import styles from "./AuthPage.module.css";
 
@@ -70,18 +75,17 @@ export function SignupPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
+    <PageShell className={styles.page}>
+      <Card elevated padded className={styles.card}>
         <h1 className={styles.title}>Inscription</h1>
         <p className={styles.subtitle}>
           Créez un compte pour accéder à l&apos;application
         </p>
 
         <form className={styles.form} onSubmit={handleSignup}>
-          <label className={styles.field}>
-            <span className={styles.label}>Nom</span>
-            <input
-              className={styles.input}
+          <FormField label="Nom" htmlFor="signup-name">
+            <Input
+              id="signup-name"
               type="text"
               placeholder="Votre nom"
               value={name}
@@ -89,12 +93,11 @@ export function SignupPage() {
               autoComplete="name"
               disabled={isLoading}
             />
-          </label>
+          </FormField>
 
-          <label className={styles.field}>
-            <span className={styles.label}>Email</span>
-            <input
-              className={styles.input}
+          <FormField label="Email" htmlFor="signup-email">
+            <Input
+              id="signup-email"
               type="email"
               placeholder="votre@email.com"
               value={email}
@@ -102,12 +105,15 @@ export function SignupPage() {
               autoComplete="email"
               disabled={isLoading}
             />
-          </label>
+          </FormField>
 
-          <label className={styles.field}>
-            <span className={styles.label}>Mot de passe</span>
-            <input
-              className={styles.input}
+          <FormField
+            label="Mot de passe"
+            htmlFor="signup-password"
+            hint="Au moins 6 caractères"
+          >
+            <Input
+              id="signup-password"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -115,13 +121,11 @@ export function SignupPage() {
               autoComplete="new-password"
               disabled={isLoading}
             />
-            <span className={styles.hint}>Au moins 6 caractères</span>
-          </label>
+          </FormField>
 
-          <label className={styles.field}>
-            <span className={styles.label}>Confirmer le mot de passe</span>
-            <input
-              className={styles.input}
+          <FormField label="Confirmer le mot de passe" htmlFor="signup-confirm">
+            <Input
+              id="signup-confirm"
               type="password"
               placeholder="••••••••"
               value={confirmPassword}
@@ -129,20 +133,20 @@ export function SignupPage() {
               autoComplete="new-password"
               disabled={isLoading}
             />
-          </label>
+          </FormField>
 
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.success}>{success}</p>}
 
-          <button className={styles.button} type="submit" disabled={isLoading}>
-            {isLoading ? "Inscription..." : "S'inscrire"}
-          </button>
+          <Button type="submit" fullWidth loading={isLoading}>
+            S&apos;inscrire
+          </Button>
 
           <p className={styles.footer}>
             Déjà un compte ? <Link to="/login">Se connecter</Link>
           </p>
         </form>
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

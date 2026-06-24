@@ -25,8 +25,8 @@ export const router = createBrowserRouter(
       {
         element: <GuestRoute />,
         children: [
-          { path: "login", element: <LoginPage /> },
-          { path: "signup", element: <SignupPage /> },
+          { path: "login", element: <LoginPage />, handle: { title: "Connexion" } },
+          { path: "signup", element: <SignupPage />, handle: { title: "Inscription" } },
         ],
       },
       {
@@ -34,6 +34,7 @@ export const router = createBrowserRouter(
         children: [
           {
             path: "habits",
+            handle: { title: "Habits" },
             element: (
               <FeatureRoute feature="habits">
                 <HabitPage />
@@ -42,17 +43,18 @@ export const router = createBrowserRouter(
           },
           {
             path: "measures",
+            handle: { title: "Mensurations" },
             element: (
               <FeatureRoute feature="measures">
                 <MeasurePage />
               </FeatureRoute>
             ),
           },
-          { path: "notes", element: <NotesPage /> },
-          { path: "profil", element: <ProfilPage /> },
+          { path: "notes", element: <NotesPage />, handle: { title: "Notes" } },
+          { path: "profil", element: <ProfilPage />, handle: { title: "Profil" } },
         ],
       },
-      { path: "*", element: <NotFoundPage /> },
+      { path: "*", element: <NotFoundPage />, handle: { title: "Page introuvable" } },
     ],
   },
   ],

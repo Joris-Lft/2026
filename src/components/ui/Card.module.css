@@ -1,0 +1,42 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.interactive {
+  width: 100%;
+  padding: 0;
+  text-align: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.interactive:hover {
+  border-color: color-mix(in srgb, var(--color-tint) 40%, var(--color-border));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.interactive:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.interactive:focus-visible {
+  outline: 2px solid var(--color-tint);
+  outline-offset: 2px;
+}
+
+.padded {
+  padding: 16px;
+}
+
+.elevated {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}

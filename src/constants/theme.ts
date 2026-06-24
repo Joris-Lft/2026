@@ -1,21 +1,21 @@
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#2dd4bf";
+const tintColorLight = "#c45d3e";
+const tintColorDark = "#e8a87c";
 
 export const Colors = {
   light: {
-    text: "#0a0e1a",
-    background: "#fff",
+    text: "#1c1917",
+    background: "#f3ede6",
     tint: tintColorLight,
-    icon: "#687076",
-    tabIconDefault: "#687076",
+    icon: "#78716c",
+    tabIconDefault: "#a8a29e",
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: "#f8fafc",
-    background: "#0a0e1a",
+    text: "#faf8f5",
+    background: "#12100e",
     tint: tintColorDark,
-    icon: "#2dd4bf",
-    tabIconDefault: "#fff",
+    icon: "#d6d3d1",
+    tabIconDefault: "#a8a29e",
     tabIconSelected: tintColorDark,
   },
 } as const;
@@ -23,7 +23,7 @@ export const Colors = {
 export type ColorScheme = keyof typeof Colors;
 
 export const Fonts = {
-  sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  sans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   serif: "Georgia, 'Times New Roman', serif",
   mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
 };

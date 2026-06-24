@@ -1,0 +1,38 @@
+.group {
+  display: flex;
+  gap: 8px;
+}
+
+.option {
+  flex: 1;
+  padding: 12px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.option:hover {
+  background: var(--color-tint-soft);
+}
+
+.option:active {
+  transform: scale(0.98);
+}
+
+.active {
+  background: var(--color-tint);
+  border-color: var(--color-tint);
+  color: #fff;
+}
+
+.active:hover {
+  background: var(--color-tint);
+}

@@ -4,6 +4,9 @@ import { useCreateHabit } from "@/hooks/use-habits";
 import type { CreateHabitInput } from "@/types/habits";
 import { HabitFormModal } from "@/components/Habit/HabitFormModal";
 import { PeriodHabit } from "@/components/Habit/PeriodHabit";
+import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageShell } from "@/components/ui/PageShell";
 import type { PeriodData } from "@/types/tracking";
 import styles from "./HabitPage.module.css";
 
@@ -26,28 +29,33 @@ export function HabitPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Tracking</h1>
+    <PageShell>
+      <PageHeader
+        title="Tracking"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              pill
+              size="sm"
+              onClick={() => setIsEditMode(!isEditMode)}
+            >
+              {isEditMode ? "Sortir du mode édition" : "Mode édition"}
+            </Button>
 
-      <div className={styles.headerButtons}>
-        <button
-          type="button"
-          className={styles.linkButton}
-          onClick={() => setIsEditMode(!isEditMode)}
-        >
-          {isEditMode ? "Sortir du mode édition" : "Mode édition"}
-        </button>
-
-        {isEditMode && (
-          <button
-            type="button"
-            className={styles.linkButton}
-            onClick={() => setIsModalVisible(true)}
-          >
-            + Ajouter un tracking
-          </button>
-        )}
-      </div>
+            {isEditMode && (
+              <Button
+                variant="outline"
+                pill
+                size="sm"
+                onClick={() => setIsModalVisible(true)}
+              >
+                Ajouter un tracking
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className={styles.periods}>
         {periods.map((period) => (
@@ -64,6 +72,6 @@ export function HabitPage() {
         onClose={() => setIsModalVisible(false)}
         onCreate={addHabit}
       />
-    </div>
+    </PageShell>
   );
 }

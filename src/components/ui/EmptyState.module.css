@@ -1,0 +1,15 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.message {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}

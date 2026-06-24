@@ -1,0 +1,111 @@
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-border) 70%, transparent) 0%,
+    color-mix(in srgb, var(--color-tint) 10%, var(--color-border)) 50%,
+    color-mix(in srgb, var(--color-border) 70%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.text {
+  height: 0.9rem;
+  border-radius: var(--radius-full);
+}
+
+.title {
+  height: 1.75rem;
+  width: 45%;
+  margin-bottom: 8px;
+}
+
+.block {
+  width: 100%;
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.noteCard {
+  height: 140px;
+  border-radius: var(--radius-md);
+}
+
+.habitRow {
+  height: 52px;
+  border-radius: var(--radius-md);
+}
+
+.chart {
+  height: 250px;
+  border-radius: var(--radius-md);
+}
+
+.tableRow {
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.noteGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@supports (grid-template-rows: masonry) {
+  .noteGrid {
+    grid-template-rows: masonry;
+  }
+}
+
+@supports (display: grid-lanes) {
+  .noteGrid {
+    display: grid-lanes;
+  }
+}
+
+@media (min-width: 768px) {
+  .noteGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  }
+}

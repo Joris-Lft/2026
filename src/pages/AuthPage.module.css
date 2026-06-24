@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 60px);
-  padding: 20px;
 }
 
 .card {
@@ -14,72 +13,29 @@
 .title {
   margin: 0 0 8px;
   text-align: center;
-  font-size: 1.75rem;
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
-  margin: 0 0 32px;
+  margin: 0 0 28px;
   text-align: center;
-  opacity: 0.7;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.label {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.input {
-  border: 1px solid var(--color-icon);
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 1rem;
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
-.input:focus {
-  outline: 2px solid var(--color-tint);
-  outline-offset: 1px;
-}
-
-.hint {
-  font-size: 0.75rem;
-  opacity: 0.6;
-}
-
-.button {
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  background: var(--color-tint);
-  color: #fff;
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  gap: 18px;
 }
 
 .footer {
   text-align: center;
-  margin: 16px 0 0;
+  margin: 0;
   font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
 
 .error {

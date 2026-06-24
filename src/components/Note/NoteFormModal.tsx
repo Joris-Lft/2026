@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import type { Note, NoteFormInput } from "@/types/notes";
+import { Button } from "@/components/ui/Button";
+import { FormField } from "@/components/ui/FormField";
+import { Textarea } from "@/components/ui/Input";
+import { Modal, ModalActions } from "@/components/ui/Modal";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useInvitees, useUserDirectory } from "@/hooks/use-users";
 import { isImageAttachment } from "@/utils/attachments";
 import { uploadImageFiles } from "@/utils/upload-image";
@@ -54,14 +58,6 @@ function NoteFormModalContent({
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
     };
   }, [pendingImages]);
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
 
   const willBeCommune = inviteeIds.length > 0;
 
@@ -184,239 +180,205 @@ function NoteFormModalContent({
         ? "Modifier la note"
         : "Nouvelle note";
 
-  return (
-    <div
-      className={styles.overlay}
-      onClick={handleClose}
-      role="presentation"
-    >
-      <div
-        className={styles.panel}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="note-modal-title"
-        onClick={(event) => event.stopPropagation()}
+  const statusBadge =
+    mode === "view" && initialNote ? (
+      <span
+        className={
+          initialNote.status === "Commune"
+            ? styles.statusCommune
+            : styles.statusPerso
+        }
       >
-        <div className={styles.header}>
-          <div className={styles.headerMain}>
-            <h2 id="note-modal-title" className={styles.modalTitle}>
-              {title}
-            </h2>
-            {mode === "view" && initialNote && (
-              <span
-                className={
-                  initialNote.status === "Commune"
-                    ? styles.statusCommune
-                    : styles.statusPerso
-                }
-              >
-                {initialNote.status}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={handleClose}
-            aria-label="Fermer"
-          >
-            ✕
-          </button>
-        </div>
+        {initialNote.status}
+      </span>
+    ) : undefined;
 
-        {mode === "view" && initialNote ? (
+  return (
+    <Modal
+      open
+      portal
+      variant="drawer"
+      onClose={handleClose}
+      title={title}
+      titleId="note-modal-title"
+      titleExtra={statusBadge}
+      footer={
+        mode === "view" && initialNote ? (
           <>
-            <div className={styles.readBody}>
-              {formattedDate && (
-                <time className={styles.readMeta} dateTime={initialNote.createdAt}>
-                  {formattedDate}
-                </time>
-              )}
-
-              <p className={styles.readContent}>{initialNote.content || "—"}</p>
-
-              {imageAttachments.length > 0 && (
-                <div className={styles.readGallery}>
-                  {imageAttachments.map((attachment) => (
-                    <a
-                      key={attachment.id}
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.readImageLink}
-                    >
-                      <img
-                        src={attachment.url}
-                        alt={attachment.filename}
-                        className={styles.readImage}
-                        loading="lazy"
-                      />
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {initialNote.status === "Commune" && sharedWithEmails.length > 0 && (
-                <p className={styles.readShare}>
-                  Partagée avec {sharedWithEmails.join(", ")}
-                </p>
-              )}
-            </div>
-
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={handleClose}
-              >
-                Fermer
-              </button>
-              <button
-                type="button"
-                className={styles.submitButton}
-                onClick={() => setMode("edit")}
-              >
-                Modifier
-              </button>
-            </div>
+            <Button variant="secondary" fullWidth onClick={handleClose}>
+              Fermer
+            </Button>
+            <Button fullWidth onClick={() => setMode("edit")}>
+              Modifier
+            </Button>
           </>
         ) : (
-          <>
-            <div className={styles.form}>
-              <label className={styles.label} htmlFor="note-content">
-                Contenu
-              </label>
-              <textarea
-                id="note-content"
-                className={styles.textarea}
-                placeholder="Écrivez votre note..."
-                value={content}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  if (error) setError(null);
-                }}
-                rows={5}
-              />
+          <ModalActions
+            cancelLabel={isExistingNote ? "Retour" : "Annuler"}
+            submitLabel={
+              isSubmitting
+                ? isExistingNote
+                  ? "Enregistrement..."
+                  : "Création..."
+                : isExistingNote
+                  ? "Enregistrer"
+                  : "Créer"
+            }
+            onCancel={handleCancelEdit}
+            onSubmit={() => void handleSubmit()}
+            loading={isSubmitting}
+            submitDisabled={isSubmitting}
+          />
+        )
+      }
+    >
+      {mode === "view" && initialNote ? (
+        <div className={styles.readBody}>
+          {formattedDate && (
+            <time className={styles.readMeta} dateTime={initialNote.createdAt}>
+              {formattedDate}
+            </time>
+          )}
 
-              <div className={styles.imagesSection}>
-                <span className={styles.label}>Images</span>
-                <p className={styles.hint}>
-                  Formats acceptés : JPG, PNG, GIF, WebP…
-                </p>
+          <p className={styles.readContent}>{initialNote.content || "—"}</p>
 
-                <label className={styles.fileInputLabel}>
-                  Ajouter des images
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className={styles.fileInput}
-                    onChange={handleImageSelect}
-                    disabled={isSubmitting}
+          {imageAttachments.length > 0 && (
+            <div className={styles.readGallery}>
+              {imageAttachments.map((attachment) => (
+                <a
+                  key={attachment.id}
+                  href={attachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.readImageLink}
+                >
+                  <img
+                    src={attachment.url}
+                    alt={attachment.filename}
+                    className={styles.readImage}
+                    loading="lazy"
                   />
-                </label>
+                </a>
+              ))}
+            </div>
+          )}
 
-                {(keptAttachmentUrls.length > 0 || pendingImages.length > 0) && (
-                  <div className={styles.imagePreviewGrid}>
-                    {keptAttachmentUrls.map((url) => (
-                      <div key={url} className={styles.imagePreviewItem}>
-                        <img src={url} alt="" className={styles.imagePreview} />
-                        <button
-                          type="button"
-                          className={styles.removeImageButton}
-                          onClick={() => removeKeptAttachment(url)}
-                          aria-label="Retirer l'image"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                    {pendingImages.map((image) => (
-                      <div key={image.id} className={styles.imagePreviewItem}>
-                        <img
-                          src={image.previewUrl}
-                          alt=""
-                          className={styles.imagePreview}
-                        />
-                        <button
-                          type="button"
-                          className={styles.removeImageButton}
-                          onClick={() => removePendingImage(image.id)}
-                          aria-label="Retirer l'image"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+          {initialNote.status === "Commune" && sharedWithEmails.length > 0 && (
+            <p className={styles.readShare}>
+              Partagée avec {sharedWithEmails.join(", ")}
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <FormField
+            label="Contenu"
+            htmlFor="note-content"
+            error={error}
+          >
+            <Textarea
+              id="note-content"
+              placeholder="Écrivez votre note..."
+              value={content}
+              onChange={(e) => {
+                setContent(e.target.value);
+                if (error) setError(null);
+              }}
+              rows={5}
+            />
+          </FormField>
+
+          <div className={styles.imagesSection}>
+            <span className={styles.sectionLabel}>Images</span>
+            <p className={styles.hint}>
+              Formats acceptés : JPG, PNG, GIF, WebP…
+            </p>
+
+            <label className={styles.fileInputLabel}>
+              Ajouter des images
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className={styles.fileInput}
+                onChange={handleImageSelect}
+                disabled={isSubmitting}
+              />
+            </label>
+
+            {(keptAttachmentUrls.length > 0 || pendingImages.length > 0) && (
+              <div className={styles.imagePreviewGrid}>
+                {keptAttachmentUrls.map((url) => (
+                  <div key={url} className={styles.imagePreviewItem}>
+                    <img src={url} alt="" className={styles.imagePreview} />
+                    <button
+                      type="button"
+                      className={styles.removeImageButton}
+                      onClick={() => removeKeptAttachment(url)}
+                      aria-label="Retirer l'image"
+                    >
+                      ✕
+                    </button>
                   </div>
-                )}
+                ))}
+                {pendingImages.map((image) => (
+                  <div key={image.id} className={styles.imagePreviewItem}>
+                    <img
+                      src={image.previewUrl}
+                      alt=""
+                      className={styles.imagePreview}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeImageButton}
+                      onClick={() => removePendingImage(image.id)}
+                      aria-label="Retirer l'image"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
 
-              <div className={styles.shareSection}>
-                <span className={styles.label}>Partager avec</span>
-                <p className={styles.hint}>
-                  {willBeCommune
-                    ? "Note commune — visible par les personnes invitées"
-                    : "Sans invitation, la note reste personnelle"}
-                </p>
-
-                {isLoadingUsers ? (
-                  <p className={styles.usersLoading}>
-                    Chargement des utilisateurs...
-                  </p>
-                ) : invitees.length === 0 ? (
-                  <p className={styles.noUsers}>
-                    Aucun autre utilisateur disponible
-                  </p>
-                ) : (
-                  <ul className={styles.userList}>
-                    {invitees.map((user) => (
-                      <li key={user.id}>
-                        <label className={styles.userOption}>
-                          <input
-                            type="checkbox"
-                            checked={inviteeIds.includes(user.id)}
-                            onChange={() => toggleInvitee(user.id)}
-                          />
-                          <span>{user.email}</span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+          <FormField
+            label="Partager avec"
+            hint={
+              willBeCommune
+                ? "Note commune — visible par les personnes invitées"
+                : "Sans invitation, la note reste personnelle"
+            }
+          >
+            {isLoadingUsers ? (
+              <div className={styles.usersLoading}>
+                <Skeleton variant="habitRow" />
+                <Skeleton variant="habitRow" />
               </div>
-
-              {error && <p className={styles.error}>{error}</p>}
-            </div>
-
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={handleCancelEdit}
-                disabled={isSubmitting}
-              >
-                {isExistingNote ? "Retour" : "Annuler"}
-              </button>
-              <button
-                type="button"
-                className={styles.submitButton}
-                onClick={() => void handleSubmit()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? isExistingNote
-                    ? "Enregistrement..."
-                    : "Création..."
-                  : isExistingNote
-                    ? "Enregistrer"
-                    : "Créer"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+            ) : invitees.length === 0 ? (
+              <p className={styles.noUsers}>
+                Aucun autre utilisateur disponible
+              </p>
+            ) : (
+              <ul className={styles.userList}>
+                {invitees.map((user) => (
+                  <li key={user.id}>
+                    <label className={styles.userOption}>
+                      <input
+                        type="checkbox"
+                        checked={inviteeIds.includes(user.id)}
+                        onChange={() => toggleInvitee(user.id)}
+                      />
+                      <span>{user.email}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </FormField>
+        </>
+      )}
+    </Modal>
   );
 }
 
@@ -427,12 +389,11 @@ export function NoteFormModal({
 }: NoteFormModalProps) {
   if (!isVisible) return null;
 
-  return createPortal(
+  return (
     <NoteFormModalContent
       key={initialNote?.id ?? "new-note"}
       initialNote={initialNote}
       {...props}
-    />,
-    document.body,
+    />
   );
 }
