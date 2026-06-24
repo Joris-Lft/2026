@@ -1,14 +1,15 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { RouteErrorPage } from "@/components/errors/RouteErrorPage";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AccueilPage } from "@/pages/AccueilPage";
-import { CommunPage } from "@/pages/CommunPage";
 import { HabitPage } from "@/pages/HabitPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { MeasurePage } from "@/pages/MeasurePage";
+import { NotesPage } from "@/pages/NotesPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-import { PersoPage } from "@/pages/PersoPage";
 import { ProfilPage } from "@/pages/ProfilPage";
 import { SignupPage } from "@/pages/SignupPage";
+import { DefaultRedirect } from "@/routes/DefaultRedirect";
+import { FeatureRoute } from "@/routes/FeatureRoute";
 import { GuestRoute, ProtectedRoute } from "@/routes/RouteGuards";
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -20,7 +21,7 @@ export const router = createBrowserRouter(
     element: <AppLayout />,
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Navigate to="/habits" replace /> },
+      { index: true, element: <DefaultRedirect /> },
       {
         element: <GuestRoute />,
         children: [
@@ -31,11 +32,24 @@ export const router = createBrowserRouter(
       {
         element: <ProtectedRoute />,
         children: [
-          { path: "habits", element: <HabitPage /> },
+          {
+            path: "habits",
+            element: (
+              <FeatureRoute feature="habits">
+                <HabitPage />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "measures",
+            element: (
+              <FeatureRoute feature="measures">
+                <MeasurePage />
+              </FeatureRoute>
+            ),
+          },
+          { path: "notes", element: <NotesPage /> },
           { path: "profil", element: <ProfilPage /> },
-          { path: "accueil", element: <AccueilPage /> },
-          { path: "perso", element: <PersoPage /> },
-          { path: "commun", element: <CommunPage /> },
         ],
       },
       { path: "*", element: <NotFoundPage /> },

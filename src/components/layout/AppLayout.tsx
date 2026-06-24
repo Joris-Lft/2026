@@ -1,32 +1,19 @@
 import { NavLink, Outlet } from "react-router";
+import { Moon, Sun } from "lucide-react";
 import {
-  BarChart3,
-  Home,
-  Moon,
-  Sun,
-  User,
-  UserCircle,
-  Users,
-} from "lucide-react";
+  getVisibleNavItems,
+} from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationPreferences } from "@/contexts/navigation-preferences-context";
 import { useTheme } from "@/contexts/theme-context";
 import styles from "./AppLayout.module.css";
 
-const navItems = [
-  { to: "/habits", label: "Habits", icon: BarChart3 },
-  { to: "/profil", label: "Profil", icon: UserCircle },
-];
-
-const sidebarItems = [
-  ...navItems,
-  { to: "/accueil", label: "Accueil", icon: Home },
-  { to: "/perso", label: "Perso", icon: User },
-  { to: "/commun", label: "Commun", icon: Users },
-];
-
 export function AppLayout() {
   const { isAuthenticated } = useAuth();
+  const { preferences } = useNavigationPreferences();
   const { currentTheme, toggleTheme } = useTheme();
+
+  const navItems = getVisibleNavItems(preferences);
 
   return (
     <div className={styles.shell}>
@@ -46,8 +33,8 @@ export function AppLayout() {
 
       <div className={styles.body}>
         {isAuthenticated && (
-        <nav className={styles.sidebar} aria-label="Navigation principale">
-          {sidebarItems.map(({ to, label, icon: Icon }) => (
+          <nav className={styles.sidebar} aria-label="Navigation principale">
+            {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -59,7 +46,7 @@ export function AppLayout() {
                 <span>{label}</span>
               </NavLink>
             ))}
-        </nav>
+          </nav>
         )}
 
         <main className={`${styles.main} ${!isAuthenticated ? styles.mainGuest : ""}`}>
@@ -68,22 +55,22 @@ export function AppLayout() {
       </div>
 
       {isAuthenticated && (
-      <nav className={styles.bottomNav} aria-label="Navigation mobile">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              isActive
-                ? `${styles.bottomLink} ${styles.bottomLinkActive}`
-                : styles.bottomLink
-            }
-          >
-            <Icon size={22} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
+        <nav className={styles.bottomNav} aria-label="Navigation mobile">
+          {navItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                isActive
+                  ? `${styles.bottomLink} ${styles.bottomLinkActive}`
+                  : styles.bottomLink
+              }
+            >
+              <Icon size={22} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
       )}
     </div>
   );

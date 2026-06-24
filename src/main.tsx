@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router";
 import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 import { AuthProvider } from "@/contexts/auth-context";
+import { NavigationPreferencesProvider } from "@/contexts/navigation-preferences-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { router } from "@/routes/router";
 import "@/styles/global.css";
@@ -22,9 +23,11 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <ErrorBoundary>
-            <RouterProvider router={router} />
-          </ErrorBoundary>
+          <NavigationPreferencesProvider>
+            <ErrorBoundary>
+              <RouterProvider router={router} />
+            </ErrorBoundary>
+          </NavigationPreferencesProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

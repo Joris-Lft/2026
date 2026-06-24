@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_TABLE_NAME: string;
   readonly VITE_AIRTABLE_EMAIL_FIELD: string;
   readonly VITE_AIRTABLE_PASSWORD_FIELD: string;
+  readonly VITE_AIRTABLE_SHOW_HABITS_FIELD: string;
+  readonly VITE_AIRTABLE_SHOW_MEASURES_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_TABLE_NAME: string;
   readonly VITE_AIRTABLE_HABITS_USER_ID_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_NAME_FIELD: string;
@@ -17,7 +19,25 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_HABITS_LOGS_COMPLETED_AT_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_LOGS_FREQUENCY_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_LOGS_PERIOD_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_TABLE_NAME: string;
+  readonly VITE_AIRTABLE_MEASURES_MEASURE_ID_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_USER_ID_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_DATE_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_WEIGHT_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_ARM_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_BUST_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_WAIST_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_HIP_FIELD: string;
+  readonly VITE_AIRTABLE_MEASURES_THIGH_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_TABLE_NAME: string;
+  readonly VITE_AIRTABLE_NOTES_ID_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_CONTENT_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_ASSIGNEES_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_STATUS_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_ATTACHMENTS_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_CREATED_AT_FIELD: string;
   readonly VITE_PASSWORD_SALT: string;
+  readonly VITE_IMGBB_API_KEY?: string;
 }
 
 interface ImportMeta {

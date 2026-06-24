@@ -1,6 +1,8 @@
 import {
   AIRTABLE_EMAIL_FIELD,
   AIRTABLE_PASSWORD_FIELD,
+  AIRTABLE_SHOW_HABITS_FIELD,
+  AIRTABLE_SHOW_MEASURES_FIELD,
 } from "./airtable-config";
 import { usersTable } from "./airtable-client";
 import type { LoginCredentials, User } from "@/types/user";
@@ -42,9 +44,9 @@ export async function loginWithAirtable(
     const token = `airtable_${userRecord.id}_${Date.now()}`;
 
     const user: User = {
-      id: userRecord.id,
-      email: userRecord.fields[AIRTABLE_EMAIL_FIELD] as string,
       ...userRecord.fields,
+      id: userRecord.id,
+      email: String(userRecord.fields[AIRTABLE_EMAIL_FIELD] ?? ""),
     };
 
     await storage.setItem(AUTH_STORAGE_KEY, token);
@@ -116,9 +118,11 @@ export async function createUser(
 
     const passwordHash = await hashPassword(password);
 
-    const fields: Record<string, string> = {
+    const fields: Record<string, string | boolean> = {
       [AIRTABLE_EMAIL_FIELD]: email,
       [AIRTABLE_PASSWORD_FIELD]: passwordHash,
+      [AIRTABLE_SHOW_HABITS_FIELD]: true,
+      [AIRTABLE_SHOW_MEASURES_FIELD]: true,
     };
 
     Object.assign(fields, additionalFields);
@@ -126,9 +130,9 @@ export async function createUser(
     const [record] = await usersTable.create([{ fields }]);
 
     const user: User = {
-      id: record.id,
-      email: record.fields[AIRTABLE_EMAIL_FIELD] as string,
       ...record.fields,
+      id: record.id,
+      email: String(record.fields[AIRTABLE_EMAIL_FIELD] ?? ""),
     };
 
     return { user };
