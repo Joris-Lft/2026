@@ -1,0 +1,87 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 60px);
+  padding: 20px;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.code {
+  margin: 0 0 8px;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-tint);
+  opacity: 0.85;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+
+.details {
+  margin: 0 0 24px;
+  padding: 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  text-align: left;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--color-tint);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.button:hover,
+.linkButton:hover {
+  opacity: 0.9;
+}

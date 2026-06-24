@@ -1,0 +1,78 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 20px;
+}
+
+.content {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.title {
+  margin: 0;
+  text-align: center;
+}
+
+.userInfo {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.value {
+  font-size: 1rem;
+}
+
+.button {
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--color-tint);
+  color: #fff;
+  cursor: pointer;
+}
+
+.cancelButton {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 1rem;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  flex: 1;
+}
+
+.confirmBox {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 12px;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  text-align: center;
+}
