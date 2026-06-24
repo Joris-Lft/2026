@@ -16,12 +16,14 @@ export type Note = {
   assigneeIds: string[];
   status: NoteStatus;
   attachments: NoteAttachment[];
+  tags: string[];
 };
 
 export type NoteFormInput = {
   content: string;
   inviteeIds: string[];
   attachmentUrls: string[];
+  tags: string[];
 };
 
 export type CreateNoteInput = NoteFormInput;

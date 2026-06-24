@@ -1,4 +1,5 @@
 import type { Note } from "@/types/notes";
+import { TagList } from "@/components/Tag/Tag";
 import { Card } from "@/components/ui/Card";
 import { isImageAttachment } from "@/utils/attachments";
 import styles from "./NoteCard.module.css";
@@ -37,6 +38,8 @@ export function NoteCard({ note, onOpen }: NoteCardProps) {
       </div>
 
       <p className={styles.content}>{note.content || "—"}</p>
+
+      <TagList tags={note.tags} className={styles.tags} />
 
       {previewImage && (
         <div className={styles.imagePreview}>

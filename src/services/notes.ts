@@ -13,6 +13,7 @@ import {
   AIRTABLE_NOTES_CREATED_AT_FIELD,
   AIRTABLE_NOTES_ID_FIELD,
   AIRTABLE_NOTES_STATUS_FIELD,
+  AIRTABLE_NOTES_TAGS_FIELD,
 } from "./airtable-config";
 
 type AirtableAttachmentInput = { url: string };
@@ -42,6 +43,12 @@ function mapAttachments(value: unknown): NoteAttachment[] {
     }));
 }
 
+function mapTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return [...new Set(value.map(String).map((tag) => tag.trim()).filter(Boolean))];
+}
+
 function mapAssigneeIds(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map(String).filter(Boolean);
@@ -66,6 +73,7 @@ function mapRecordToNote(record: {
     assigneeIds: mapAssigneeIds(record.fields[AIRTABLE_NOTES_ASSIGNEES_FIELD]),
     status: status === "Commune" ? "Commune" : "Perso",
     attachments: mapAttachments(record.fields[AIRTABLE_NOTES_ATTACHMENTS_FIELD]),
+    tags: mapTags(record.fields[AIRTABLE_NOTES_TAGS_FIELD]),
   };
 }
 
@@ -91,6 +99,7 @@ function buildNoteFields(
     [AIRTABLE_NOTES_ASSIGNEES_FIELD]: assigneeIds,
     [AIRTABLE_NOTES_STATUS_FIELD]: status,
     [AIRTABLE_NOTES_ATTACHMENTS_FIELD]: toAirtableAttachments(input.attachmentUrls),
+    [AIRTABLE_NOTES_TAGS_FIELD]: input.tags,
   };
 }
 

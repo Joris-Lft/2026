@@ -35,6 +35,7 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_NOTES_ASSIGNEES_FIELD: string;
   readonly VITE_AIRTABLE_NOTES_STATUS_FIELD: string;
   readonly VITE_AIRTABLE_NOTES_ATTACHMENTS_FIELD: string;
+  readonly VITE_AIRTABLE_NOTES_TAGS_FIELD: string;
   readonly VITE_AIRTABLE_NOTES_CREATED_AT_FIELD: string;
   readonly VITE_PASSWORD_SALT: string;
   readonly VITE_IMGBB_API_KEY?: string;

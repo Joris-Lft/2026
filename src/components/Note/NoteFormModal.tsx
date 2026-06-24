@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Note, NoteFormInput } from "@/types/notes";
+import { TagList, TagSelect } from "@/components/Tag/Tag";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Input";
@@ -14,6 +15,7 @@ interface NoteFormModalProps {
   isVisible: boolean;
   currentUserId: string;
   initialNote?: Note;
+  availableTags?: string[];
   onClose: () => void;
   onSubmit: (value: NoteFormInput) => void | Promise<void>;
   isSubmitting?: boolean;
@@ -30,6 +32,7 @@ type ModalMode = "view" | "edit";
 function NoteFormModalContent({
   currentUserId,
   initialNote,
+  availableTags = [],
   onClose,
   onSubmit,
   isSubmitting = false,
@@ -50,8 +53,14 @@ function NoteFormModalContent({
   const [keptAttachmentUrls, setKeptAttachmentUrls] = useState<string[]>(() =>
     initialNote ? initialNote.attachments.map((a) => a.url) : [],
   );
+  const [tags, setTags] = useState<string[]>(() => initialNote?.tags ?? []);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (availableTags.length === 0) return;
+    setTags((current) => current.filter((tag) => availableTags.includes(tag)));
+  }, [availableTags]);
 
   useEffect(() => {
     return () => {
@@ -73,6 +82,9 @@ function NoteFormModalContent({
         initialNote.assigneeIds.filter((id) => id !== currentUserId),
       );
       setKeptAttachmentUrls(initialNote.attachments.map((a) => a.url));
+      setTags(
+        initialNote.tags.filter((tag) => availableTags.includes(tag)),
+      );
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setPendingImages([]);
       setError(null);
@@ -136,6 +148,7 @@ function NoteFormModalContent({
         content: content.trim(),
         inviteeIds,
         attachmentUrls: [...keptAttachmentUrls, ...uploadedUrls],
+        tags,
       });
 
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
@@ -242,6 +255,10 @@ function NoteFormModalContent({
 
           <p className={styles.readContent}>{initialNote.content || "—"}</p>
 
+          {initialNote.tags.length > 0 && (
+            <TagList tags={initialNote.tags} />
+          )}
+
           {imageAttachments.length > 0 && (
             <div className={styles.readGallery}>
               {imageAttachments.map((attachment) => (
@@ -341,6 +358,19 @@ function NoteFormModalContent({
               </div>
             )}
           </div>
+
+          <FormField
+            label="Tags"
+            hint="Sélectionnez parmi les tags configurés dans Airtable"
+          >
+            <TagSelect
+              options={availableTags}
+              value={tags}
+              onChange={setTags}
+              disabled={isSubmitting}
+              emptyMessage="Aucun tag configuré dans Airtable"
+            />
+          </FormField>
 
           <FormField
             label="Partager avec"

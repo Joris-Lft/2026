@@ -1,9 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getNoteTagOptions } from "@/services/airtable-meta";
 import { createNote, getNotesForUser, updateNote } from "@/services/notes";
-import type { CreateNoteInput, UpdateNoteInput } from "@/types/notes";
+import type { CreateNoteInput, Note, UpdateNoteInput } from "@/types/notes";
+import { collectUniqueTags } from "@/utils/tags";
 
 export function notesQueryKey(userEmail: string | undefined) {
   return ["notes", userEmail] as const;
+}
+
+export function noteTagOptionsQueryKey() {
+  return ["noteTagOptions"] as const;
+}
+
+export function useNoteTagOptions(notes: Note[] = []) {
+  const query = useQuery({
+    queryKey: noteTagOptionsQueryKey(),
+    queryFn: getNoteTagOptions,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const options =
+    query.data && query.data.length > 0
+      ? query.data
+      : collectUniqueTags(notes);
+
+  return { ...query, options };
 }
 
 export function useNotes(userEmail: string | undefined) {
