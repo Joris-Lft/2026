@@ -1,13 +1,11 @@
 function getPasswordSalt(): string {
-  const viteSalt = import.meta.env.VITE_PASSWORD_SALT;
+  const viteSalt = import.meta.env?.VITE_PASSWORD_SALT;
   if (viteSalt) return viteSalt;
   if (typeof process !== "undefined" && process.env.VITE_PASSWORD_SALT) {
     return process.env.VITE_PASSWORD_SALT;
   }
   return "default-salt-change-in-production";
 }
-
-const PASSWORD_SALT = getPasswordSalt();
 
 function bufferToHex(buffer: ArrayBuffer): string {
   return Array.from(new Uint8Array(buffer))
@@ -16,7 +14,7 @@ function bufferToHex(buffer: ArrayBuffer): string {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  const saltedPassword = `${password}${PASSWORD_SALT}`;
+  const saltedPassword = `${password}${getPasswordSalt()}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(saltedPassword);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);

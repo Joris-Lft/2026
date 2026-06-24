@@ -1,0 +1,132 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: var(--color-tint-soft);
+  color: var(--color-tint);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter {
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.filter:hover {
+  border-color: color-mix(in srgb, var(--color-tint) 35%, var(--color-border));
+}
+
+.filterSelected {
+  background: var(--color-tint);
+  color: #fff;
+  border-color: var(--color-tint);
+}
+
+.filterSelected:hover {
+  opacity: 0.92;
+}
+
+.removable {
+  padding-right: 6px;
+}
+
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-tint) 18%, transparent);
+  color: var(--color-tint);
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.removeButton:hover {
+  background: color-mix(in srgb, var(--color-tint) 30%, transparent);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.filterLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.filterTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clearButton {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clearButton:hover {
+  background: var(--color-tint-soft);
+  color: var(--color-tint);
+}
+
+.tagSelect {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+}
+
+.tagSelectDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.emptyMessage {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

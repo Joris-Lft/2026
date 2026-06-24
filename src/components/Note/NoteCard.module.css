@@ -38,6 +38,10 @@
   overflow: hidden;
 }
 
+.tags {
+  margin-top: 10px;
+}
+
 .imagePreview {
   position: relative;
   margin-top: 12px;

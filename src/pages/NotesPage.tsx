@@ -1,30 +1,43 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NoteCard } from "@/components/Note/NoteCard";
 import { NoteFormModal } from "@/components/Note/NoteFormModal";
+import { TagFilter } from "@/components/Tag/Tag";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageShell } from "@/components/ui/PageShell";
 import { NotesPageSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
-import { useCreateNote, useNotes, useUpdateNote } from "@/hooks/use-notes";
+import { useCreateNote, useNoteTagOptions, useNotes, useUpdateNote } from "@/hooks/use-notes";
 import type { Note, NoteFormInput } from "@/types/notes";
+import { filterNotesByTags } from "@/utils/tags";
 import { splitNotesByStatus } from "@/utils/notes";
 import styles from "./NotesPage.module.css";
 
 export function NotesPage() {
   const { user } = useAuth();
   const { data: notes = [], isLoading, isError } = useNotes(user?.email);
+  const { options: availableTags } = useNoteTagOptions(notes);
   const createNoteMutation = useCreateNote(user?.id, user?.email);
   const updateNoteMutation = useUpdateNote(user?.id, user?.email);
-  const { perso, commune } = splitNotesByStatus(notes);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const filteredNotes = useMemo(
+    () => filterNotesByTags(notes, selectedTags),
+    [notes, selectedTags],
+  );
+  const { perso, commune } = splitNotesByStatus(filteredNotes);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
 
   const isSubmitting = createNoteMutation.isPending || updateNoteMutation.isPending;
-  const isEmpty = !isLoading && !isError && perso.length === 0 && commune.length === 0;
+  const hasNotes = notes.length > 0;
+  const hasFilteredNotes = perso.length > 0 || commune.length > 0;
+  const isEmpty = !isLoading && !isError && !hasNotes;
+  const isFilterEmpty =
+    !isLoading && !isError && hasNotes && selectedTags.length > 0 && !hasFilteredNotes;
 
   const openCreateModal = () => {
     setFormError(null);
@@ -82,33 +95,45 @@ export function NotesPage() {
       ) : isEmpty ? (
         <EmptyState>Aucune note pour le moment</EmptyState>
       ) : (
-        <div className={styles.sections}>
-          {perso.length > 0 && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Perso</h2>
-              <div className={styles.noteList}>
-                {perso.map((note) => (
-                  <NoteCard key={note.id} note={note} onOpen={openEditModal} />
-                ))}
-              </div>
-            </section>
-          )}
+        <>
+          <TagFilter
+            tags={availableTags}
+            selectedTags={selectedTags}
+            onChange={setSelectedTags}
+          />
 
-          {perso.length > 0 && commune.length > 0 && (
-            <hr className={styles.separator} aria-hidden />
-          )}
+          {isFilterEmpty ? (
+            <EmptyState>Aucune note ne correspond aux tags sélectionnés</EmptyState>
+          ) : (
+            <div className={styles.sections}>
+              {perso.length > 0 && (
+                <section className={styles.section}>
+                  <h2 className={styles.sectionTitle}>Perso</h2>
+                  <div className={styles.noteList}>
+                    {perso.map((note) => (
+                      <NoteCard key={note.id} note={note} onOpen={openEditModal} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {commune.length > 0 && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Commune</h2>
-              <div className={styles.noteList}>
-                {commune.map((note) => (
-                  <NoteCard key={note.id} note={note} onOpen={openEditModal} />
-                ))}
-              </div>
-            </section>
+              {perso.length > 0 && commune.length > 0 && (
+                <hr className={styles.separator} aria-hidden />
+              )}
+
+              {commune.length > 0 && (
+                <section className={styles.section}>
+                  <h2 className={styles.sectionTitle}>Commune</h2>
+                  <div className={styles.noteList}>
+                    {commune.map((note) => (
+                      <NoteCard key={note.id} note={note} onOpen={openEditModal} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {isModalVisible && user?.id && (
@@ -116,6 +141,7 @@ export function NotesPage() {
           isVisible={isModalVisible}
           currentUserId={user.id}
           initialNote={selectedNote}
+          availableTags={availableTags}
           onClose={closeModal}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
