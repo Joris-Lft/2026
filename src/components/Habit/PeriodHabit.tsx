@@ -3,8 +3,10 @@ import { Check, Pencil, Trash2 } from "lucide-react";
 import { getWeek } from "date-fns";
 import { fr } from "date-fns/locale";
 import { H2 } from "@/components/H2";
-import { HabitDeleteModal } from "@/components/Habit/HabitDeleteModal";
 import { HabitFormModal } from "@/components/Habit/HabitFormModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { HabitListSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import {
   useDeleteHabit,
@@ -82,12 +84,9 @@ export function PeriodHabit({ period, isEditMode = false }: PeriodHabitProps) {
         <H2 className={styles.title}>{getTitle()}</H2>
 
         {isLoading ? (
-          <div className={styles.loadingContainer}>
-            <div className={styles.spinner} aria-label="Chargement" />
-            <p className={styles.loadingText}>Chargement des habits...</p>
-          </div>
+          <HabitListSkeleton rows={3} />
         ) : sortedHabits.length === 0 ? (
-          <p className={styles.emptyText}>Aucun habit pour le moment</p>
+          <EmptyState>Aucun habit pour le moment</EmptyState>
         ) : (
           <ul className={styles.list}>
             {sortedHabits.map((item) => (
@@ -160,12 +159,19 @@ export function PeriodHabit({ period, isEditMode = false }: PeriodHabitProps) {
       />
 
       {habitToDelete && (
-        <HabitDeleteModal
+        <ConfirmModal
+          open={isDeleteModalVisible}
           loading={deleteHabitMutation.isPending}
-          visible={isDeleteModalVisible}
           onClose={() => setIsDeleteModalVisible(false)}
           onConfirm={() => void handleConfirmDelete()}
-          habitName={habitToDelete.name}
+          message={
+            <>
+              Voulez-vous vraiment supprimer le tracking de &quot;
+              {habitToDelete.name}&quot; ?
+            </>
+          }
+          confirmLabel="Oui"
+          cancelLabel="Non"
         />
       )}
     </section>

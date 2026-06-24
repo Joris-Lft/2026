@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationPreferences } from "@/contexts/navigation-preferences-context";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageShell } from "@/components/ui/PageShell";
 import styles from "./ProfilPage.module.css";
 
 const NAV_SETTINGS = [
@@ -31,12 +36,12 @@ export function ProfilPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <PageShell className={styles.page}>
       <div className={styles.content}>
-        <h1 className={styles.title}>Profil</h1>
+        <PageHeader title="Profil" align="center" />
 
         {user && (
-          <div className={styles.userInfo}>
+          <Card padded className={styles.userInfo}>
             {user.Name && (
               <>
                 <span className={styles.label}>Nom:</span>
@@ -45,73 +50,61 @@ export function ProfilPage() {
             )}
             <span className={styles.label}>Email:</span>
             <span className={styles.value}>{user.email}</span>
-          </div>
+          </Card>
         )}
 
-        <section className={styles.settingsSection} aria-labelledby="nav-settings-title">
-          <h2 id="nav-settings-title" className={styles.settingsTitle}>
-            Navigation
-          </h2>
-          <p className={styles.settingsHint}>
-            Choisissez les onglets visibles dans la barre de navigation.
-          </p>
-          <ul className={styles.settingsList}>
-            {NAV_SETTINGS.map(({ feature, label, description }) => (
-              <li key={feature} className={styles.settingItem}>
-                <div className={styles.settingText}>
-                  <span className={styles.settingLabel}>{label}</span>
-                  <span className={styles.settingDescription}>{description}</span>
-                </div>
-                <label className={styles.switch}>
-                  <input
-                    type="checkbox"
-                    className={styles.switchInput}
-                    checked={preferences[feature]}
-                    disabled={isLoading}
-                    onChange={(event) =>
-                      setFeatureEnabled(feature, event.target.checked)
-                    }
-                  />
-                  <span className={styles.switchTrack} aria-hidden="true" />
-                </label>
-              </li>
-            ))}
-          </ul>
-          {saveError && <p className={styles.error}>{saveError}</p>}
-        </section>
+        <Card padded className={styles.settingsSection}>
+          <section aria-labelledby="nav-settings-title">
+            <h2 id="nav-settings-title" className={styles.settingsTitle}>
+              Navigation
+            </h2>
+            <p className={styles.settingsHint}>
+              Choisissez les onglets visibles dans la barre de navigation.
+            </p>
+            <ul className={styles.settingsList}>
+              {NAV_SETTINGS.map(({ feature, label, description }) => (
+                <li key={feature} className={styles.settingItem}>
+                  <div className={styles.settingText}>
+                    <span className={styles.settingLabel}>{label}</span>
+                    <span className={styles.settingDescription}>{description}</span>
+                  </div>
+                  <label className={styles.switch}>
+                    <input
+                      type="checkbox"
+                      className={styles.switchInput}
+                      checked={preferences[feature]}
+                      disabled={isLoading}
+                      onChange={(event) =>
+                        setFeatureEnabled(feature, event.target.checked)
+                      }
+                    />
+                    <span className={styles.switchTrack} aria-hidden="true" />
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {saveError && <p className={styles.error}>{saveError}</p>}
+          </section>
+        </Card>
 
         {error && <p className={styles.error}>{error}</p>}
 
-        {showConfirm ? (
-          <div className={styles.confirmBox}>
-            <p>Êtes-vous sûr de vouloir vous déconnecter ?</p>
-            <div className={styles.confirmActions}>
-              <button
-                type="button"
-                className={styles.cancelButton}
-                onClick={() => setShowConfirm(false)}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                className={styles.button}
-                onClick={() => void handleLogout()}
-              >
-                Déconnexion
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className={styles.button}
-            onClick={() => setShowConfirm(true)}
-          >
-            Se déconnecter
-          </button>
-        )}
+        <Button
+          variant="danger"
+          fullWidth
+          onClick={() => setShowConfirm(true)}
+        >
+          Se déconnecter
+        </Button>
+
+        <ConfirmModal
+          open={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={() => void handleLogout()}
+          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          confirmLabel="Déconnexion"
+        />
       </div>
-    </div>
+    </PageShell>
   );
 }

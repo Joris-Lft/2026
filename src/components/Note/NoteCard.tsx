@@ -1,4 +1,5 @@
 import type { Note } from "@/types/notes";
+import { Card } from "@/components/ui/Card";
 import { isImageAttachment } from "@/utils/attachments";
 import styles from "./NoteCard.module.css";
 
@@ -21,8 +22,9 @@ export function NoteCard({ note, onOpen }: NoteCardProps) {
   const extraImagesCount = imageAttachments.length > 1 ? imageAttachments.length - 1 : 0;
 
   return (
-    <button
-      type="button"
+    <Card
+      as="button"
+      padded
       className={styles.card}
       onClick={() => onOpen?.(note)}
       aria-label={`Ouvrir la note${note.noteNumber > 0 ? ` #${note.noteNumber}` : ""}`}
@@ -49,6 +51,6 @@ export function NoteCard({ note, onOpen }: NoteCardProps) {
           )}
         </div>
       )}
-    </button>
+    </Card>
   );
 }

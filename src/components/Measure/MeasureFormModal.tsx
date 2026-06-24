@@ -4,7 +4,8 @@ import type {
   Measure,
   UpdateMeasureInput,
 } from "@/types/measures";
-import styles from "./MeasureFormModal.module.css";
+import { Input } from "@/components/ui/Input";
+import { Modal, ModalActions } from "@/components/ui/Modal";
 
 interface MeasureFormModalProps {
   isVisible: boolean;
@@ -93,47 +94,31 @@ function MeasureFormModalContent({
   };
 
   return (
-    <div className={styles.overlay} onClick={handleClose} role="presentation">
-      <dialog
-        open
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-        aria-labelledby="measure-form-title"
-      >
-        <div className={styles.header}>
-          <h2 id="measure-form-title" className={styles.modalTitle}>
-            {isEditing ? "Modifier les mensurations" : "Ajouter des mensurations"}
-          </h2>
-          <button type="button" className={styles.closeButton} onClick={handleClose}>
-            ✕
-          </button>
-        </div>
-
-        <div className={styles.form}>
-          {FORM_FIELDS.map(({ key, placeholder }) => (
-            <input
-              key={key}
-              className={styles.input}
-              type="number"
-              inputMode="decimal"
-              step="any"
-              placeholder={placeholder}
-              value={form[key]}
-              onChange={(e) => handleChange(key, e.target.value)}
-            />
-          ))}
-        </div>
-
-        <div className={styles.actions}>
-          <button type="button" className={styles.cancelLink} onClick={handleClose}>
-            Annuler
-          </button>
-          <button type="button" className={styles.submitButton} onClick={handleSubmit}>
-            {isEditing ? "Modifier" : "Ajouter"}
-          </button>
-        </div>
-      </dialog>
-    </div>
+    <Modal
+      open
+      onClose={handleClose}
+      title={isEditing ? "Modifier les mensurations" : "Ajouter des mensurations"}
+      titleId="measure-form-title"
+      footer={
+        <ModalActions
+          onCancel={handleClose}
+          onSubmit={handleSubmit}
+          submitLabel={isEditing ? "Modifier" : "Ajouter"}
+        />
+      }
+    >
+      {FORM_FIELDS.map(({ key, placeholder }) => (
+        <Input
+          key={key}
+          type="number"
+          inputMode="decimal"
+          step="any"
+          placeholder={placeholder}
+          value={form[key]}
+          onChange={(e) => handleChange(key, e.target.value)}
+        />
+      ))}
+    </Modal>
   );
 }
 

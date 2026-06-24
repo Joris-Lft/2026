@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { NoteCard } from "@/components/Note/NoteCard";
 import { NoteFormModal } from "@/components/Note/NoteFormModal";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageShell } from "@/components/ui/PageShell";
+import { NotesPageSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useCreateNote, useNotes, useUpdateNote } from "@/hooks/use-notes";
 import type { Note, NoteFormInput } from "@/types/notes";
@@ -57,30 +62,25 @@ export function NotesPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Notes</h1>
-
-      <div className={styles.headerButtons}>
-        <button type="button" className={styles.addButton} onClick={openCreateModal}>
-          + Nouvelle note
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Notes"
+        align="center"
+        actions={
+          <Button pill onClick={openCreateModal}>
+            Nouvelle note
+          </Button>
+        }
+      />
 
       {formError && <p className={styles.errorBanner}>{formError}</p>}
 
       {isLoading ? (
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} aria-label="Chargement" />
-          <p className={styles.loadingText}>Chargement des notes...</p>
-        </div>
+        <NotesPageSkeleton />
       ) : isError ? (
-        <div className={styles.emptyContainer}>
-          <p className={styles.emptyText}>Impossible de charger les notes</p>
-        </div>
+        <EmptyState>Impossible de charger les notes</EmptyState>
       ) : isEmpty ? (
-        <div className={styles.emptyContainer}>
-          <p className={styles.emptyText}>Aucune note pour le moment</p>
-        </div>
+        <EmptyState>Aucune note pour le moment</EmptyState>
       ) : (
         <div className={styles.sections}>
           {perso.length > 0 && (
@@ -121,6 +121,6 @@ export function NotesPage() {
           isSubmitting={isSubmitting}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

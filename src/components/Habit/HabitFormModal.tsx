@@ -5,7 +5,10 @@ import type {
   HabitFrequency,
   UpdateHabitInput,
 } from "@/types/habits";
-import styles from "./HabitFormModal.module.css";
+import { FormField } from "@/components/ui/FormField";
+import { Input, ReadOnlyValue } from "@/components/ui/Input";
+import { Modal, ModalActions } from "@/components/ui/Modal";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 interface HabitFormModalProps {
   isVisible: boolean;
@@ -14,6 +17,12 @@ interface HabitFormModalProps {
   onUpdate?: (value: UpdateHabitInput) => void;
   editingHabit?: Habit;
 }
+
+const FREQUENCY_OPTIONS: { value: HabitFrequency; label: string }[] = [
+  { value: "daily", label: "Jour" },
+  { value: "weekly", label: "Semaine" },
+  { value: "monthly", label: "Mois" },
+];
 
 function HabitFormModalContent({
   onClose,
@@ -85,65 +94,41 @@ function HabitFormModalContent({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
-      <dialog
-        open
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-        aria-labelledby="habit-form-title"
-      >
-        <div className={styles.header}>
-          <h2 id="habit-form-title" className={styles.modalTitle}>
-            {editingHabit ? "Modifier le tracking" : "Ajouter un tracking"}
-          </h2>
-          <button type="button" className={styles.closeButton} onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <Modal
+      open
+      onClose={onClose}
+      title={editingHabit ? "Modifier le tracking" : "Ajouter un tracking"}
+      titleId="habit-form-title"
+      footer={
+        <ModalActions
+          onCancel={onClose}
+          onSubmit={handleSubmit}
+          submitLabel={editingHabit ? "Modifier" : "Ajouter"}
+        />
+      }
+    >
+      <FormField label="Nom du tracking" htmlFor="habit-title">
+        <Input
+          id="habit-title"
+          placeholder="Ex: Boire 2L d'eau"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </FormField>
 
-        <div className={styles.form}>
-          <label className={styles.field}>
-            <span className={styles.label}>Nom du tracking</span>
-            <input
-              className={styles.input}
-              placeholder="Ex: Boire 2L d'eau"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
+      <FormField label="Fréquence">
+        <SegmentedControl
+          ariaLabel="Fréquence du tracking"
+          value={selectedType}
+          options={FREQUENCY_OPTIONS}
+          onChange={setSelectedType}
+        />
+      </FormField>
 
-          <div className={styles.field}>
-            <span className={styles.label}>Fréquence</span>
-            <div className={styles.typeToggle}>
-              {(["daily", "weekly", "monthly"] as const).map((freq) => (
-                <button
-                  key={freq}
-                  type="button"
-                  className={`${styles.typeButton} ${selectedType === freq ? styles.typeButtonActive : ""}`}
-                  onClick={() => setSelectedType(freq)}
-                >
-                  {freq === "daily" ? "Jour" : freq === "weekly" ? "Semaine" : "Mois"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.field}>
-            <span className={styles.label}>Date de début</span>
-            <span className={styles.dateDisplay}>{getDateLabel()}</span>
-          </div>
-        </div>
-
-        <div className={styles.actions}>
-          <button type="button" className={styles.cancelLink} onClick={onClose}>
-            Annuler
-          </button>
-          <button type="button" className={styles.submitButton} onClick={handleSubmit}>
-            {editingHabit ? "Modifier" : "Ajouter"}
-          </button>
-        </div>
-      </dialog>
-    </div>
+      <FormField label="Date de début">
+        <ReadOnlyValue>{getDateLabel()}</ReadOnlyValue>
+      </FormField>
+    </Modal>
   );
 }
 

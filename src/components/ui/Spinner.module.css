@@ -1,0 +1,44 @@
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+.default {
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-tint);
+}
+
+.onAccent {
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+.sm {
+  width: 16px;
+  height: 16px;
+}
+
+.md {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
+}
+
+.lg {
+  width: 36px;
+  height: 36px;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.5s;
+  }
+}

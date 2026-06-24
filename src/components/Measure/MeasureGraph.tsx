@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  CartesianGrid,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -7,20 +8,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Measure, MeasureKey } from "@/types/measures";
+import { CM_METRICS } from "@/constants/charts";
+import { useChartColors } from "@/hooks/use-chart-colors";
+import type { Measure } from "@/types/measures";
 import styles from "./MeasureGraph.module.css";
 
 interface MeasureGraphProps {
   measurements: Measure[];
 }
-
-const CM_METRICS: { key: MeasureKey; color: string; label: string }[] = [
-  { key: "thigh", color: "#e74c3c", label: "Cuisse" },
-  { key: "arm", color: "#3498db", label: "Bras" },
-  { key: "bust", color: "#2ecc71", label: "Poitrine" },
-  { key: "waist", color: "#f39c12", label: "Taille" },
-  { key: "hip", color: "#9b59b6", label: "Hanche" },
-];
 
 function formatDateLabel(date: string) {
   return new Date(date).toLocaleDateString("fr-FR", {
@@ -30,6 +25,8 @@ function formatDateLabel(date: string) {
 }
 
 export function MeasureGraph({ measurements }: MeasureGraphProps) {
+  const colors = useChartColors();
+
   const chartData = useMemo(() => {
     return [...measurements]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -44,6 +41,17 @@ export function MeasureGraph({ measurements }: MeasureGraphProps) {
       }));
   }, [measurements]);
 
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: colors.tooltipBackground,
+      border: `1px solid ${colors.tooltipBorder}`,
+      borderRadius: 8,
+      color: colors.tooltipText,
+      fontSize: 12,
+    }),
+    [colors],
+  );
+
   if (chartData.length === 0) return null;
 
   return (
@@ -51,9 +59,12 @@ export function MeasureGraph({ measurements }: MeasureGraphProps) {
       <h2 className={styles.title}>Mensurations (cm)</h2>
 
       <div className={styles.legendRow}>
-        {CM_METRICS.map(({ key, color, label }) => (
+        {CM_METRICS.map(({ key, label }) => (
           <span key={key} className={styles.legendItem}>
-            <span className={styles.legendDot} style={{ backgroundColor: color }} />
+            <span
+              className={styles.legendDot}
+              style={{ backgroundColor: colors.metrics[key] }}
+            />
             {label}
           </span>
         ))}
@@ -62,24 +73,33 @@ export function MeasureGraph({ measurements }: MeasureGraphProps) {
       <div className={styles.chartContainer}>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData} margin={{ bottom: 20 }}>
+            <CartesianGrid stroke={colors.grid} strokeDasharray="4 4" />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: "#888" }}
+              tick={{ fontSize: 11, fill: colors.axis }}
+              axisLine={{ stroke: colors.grid }}
+              tickLine={{ stroke: colors.grid }}
               angle={-30}
               textAnchor="end"
               height={50}
             />
-            <YAxis tick={{ fontSize: 11, fill: "#888" }} tickCount={6} />
-            <Tooltip />
-            {CM_METRICS.map(({ key, color, label }) => (
+            <YAxis
+              tick={{ fontSize: 11, fill: colors.axis }}
+              axisLine={{ stroke: colors.grid }}
+              tickLine={{ stroke: colors.grid }}
+              tickCount={6}
+            />
+            <Tooltip contentStyle={tooltipStyle} />
+            {CM_METRICS.map(({ key, label }) => (
               <Line
                 key={key}
                 type="monotone"
                 dataKey={key}
                 name={label}
-                stroke={color}
+                stroke={colors.metrics[key]}
                 strokeWidth={2}
-                dot={{ r: 3 }}
+                dot={{ r: 3, fill: colors.metrics[key] }}
+                activeDot={{ r: 5 }}
                 connectNulls
               />
             ))}
@@ -92,22 +112,31 @@ export function MeasureGraph({ measurements }: MeasureGraphProps) {
       <div className={styles.chartContainer}>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData} margin={{ bottom: 20 }}>
+            <CartesianGrid stroke={colors.grid} strokeDasharray="4 4" />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: "#888" }}
+              tick={{ fontSize: 11, fill: colors.axis }}
+              axisLine={{ stroke: colors.grid }}
+              tickLine={{ stroke: colors.grid }}
               angle={-30}
               textAnchor="end"
               height={50}
             />
-            <YAxis tick={{ fontSize: 11, fill: "#888" }} tickCount={5} />
-            <Tooltip />
+            <YAxis
+              tick={{ fontSize: 11, fill: colors.axis }}
+              axisLine={{ stroke: colors.grid }}
+              tickLine={{ stroke: colors.grid }}
+              tickCount={5}
+            />
+            <Tooltip contentStyle={tooltipStyle} />
             <Line
               type="monotone"
               dataKey="weight"
               name="Poids"
-              stroke="#1abc9c"
+              stroke={colors.metrics.weight}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={{ r: 3, fill: colors.metrics.weight }}
+              activeDot={{ r: 5 }}
               connectNulls
             />
           </LineChart>

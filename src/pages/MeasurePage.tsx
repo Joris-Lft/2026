@@ -2,6 +2,11 @@ import { useState } from "react";
 import { MeasureFormModal } from "@/components/Measure/MeasureFormModal";
 import { MeasureGraph } from "@/components/Measure/MeasureGraph";
 import { MeasureTable } from "@/components/Measure/MeasureTable";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageShell } from "@/components/ui/PageShell";
+import { MeasurePageSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import {
   useCreateMeasure,
@@ -10,7 +15,6 @@ import {
   useUpdateMeasure,
 } from "@/hooks/use-measures";
 import type { CreateMeasureInput, Measure } from "@/types/measures";
-import styles from "./MeasurePage.module.css";
 
 const todayDate = new Date().toISOString().split("T")[0];
 
@@ -59,41 +63,43 @@ export function MeasurePage() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Mensurations</h1>
+    <PageShell>
+      <PageHeader
+        title="Mensurations"
+        align="center"
+        actionsAlign="between"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              pill
+              size="sm"
+              onClick={() => setIsEditMode(!isEditMode)}
+            >
+              {isEditMode ? "Sortir du mode édition" : "Mode édition"}
+            </Button>
 
-      <div className={styles.headerButtons}>
-        <button
-          type="button"
-          className={styles.linkButton}
-          onClick={() => setIsEditMode(!isEditMode)}
-        >
-          {isEditMode ? "Sortir du mode édition" : "Mode édition"}
-        </button>
-
-        {isEditMode && (
-          <button
-            type="button"
-            className={styles.linkButton}
-            onClick={() => {
-              setSelectedMeasure(undefined);
-              setIsModalVisible(true);
-            }}
-          >
-            + Ajouter une mensuration
-          </button>
-        )}
-      </div>
+            {isEditMode && (
+              <Button
+                variant="outline"
+                pill
+                size="sm"
+                onClick={() => {
+                  setSelectedMeasure(undefined);
+                  setIsModalVisible(true);
+                }}
+              >
+                Ajouter une mensuration
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {isLoading ? (
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} aria-label="Chargement" />
-          <p className={styles.loadingText}>Chargement des mensurations...</p>
-        </div>
+        <MeasurePageSkeleton />
       ) : measures.length === 0 ? (
-        <div className={styles.emptyContainer}>
-          <p className={styles.emptyText}>Aucune mensuration pour le moment</p>
-        </div>
+        <EmptyState>Aucune mensuration pour le moment</EmptyState>
       ) : (
         <div>
           <MeasureTable
@@ -118,6 +124,6 @@ export function MeasurePage() {
           onUpdate={handleUpdate}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

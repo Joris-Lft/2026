@@ -1,11 +1,12 @@
 import { NavLink, Outlet } from "react-router";
 import { Moon, Sun } from "lucide-react";
-import {
-  getVisibleNavItems,
-} from "@/constants/navigation";
+import { APP_NAME } from "@/constants/branding";
+import { getVisibleNavItems } from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationPreferences } from "@/contexts/navigation-preferences-context";
 import { useTheme } from "@/contexts/theme-context";
+import { DocumentTitle } from "./DocumentTitle";
+import { PageTransition } from "@/components/ui/PageTransition";
 import styles from "./AppLayout.module.css";
 
 export function AppLayout() {
@@ -17,8 +18,18 @@ export function AppLayout() {
 
   return (
     <div className={styles.shell}>
+      <DocumentTitle />
       <header className={styles.header}>
-        <span className={styles.brand}>2026</span>
+        <div className={styles.brand}>
+          <img
+            className={styles.brandMark}
+            src={`${import.meta.env.BASE_URL}favicon.svg`}
+            alt=""
+            width={28}
+            height={28}
+          />
+          <span className={styles.brandName}>{APP_NAME}</span>
+        </div>
         {isAuthenticated && (
           <button
             type="button"
@@ -50,7 +61,9 @@ export function AppLayout() {
         )}
 
         <main className={`${styles.main} ${!isAuthenticated ? styles.mainGuest : ""}`}>
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
 
