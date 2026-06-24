@@ -1,5 +1,7 @@
 # Welcome to your Expo app 👋
 
+> **Archivé** — Cette application Expo/React Native est conservée pour référence. L'application active est désormais la version React web à la racine du dépôt.
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
