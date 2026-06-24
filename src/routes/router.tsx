@@ -11,7 +11,10 @@ import { ProfilPage } from "@/pages/ProfilPage";
 import { SignupPage } from "@/pages/SignupPage";
 import { GuestRoute, ProtectedRoute } from "@/routes/RouteGuards";
 
-export const router = createBrowserRouter([
+const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+export const router = createBrowserRouter(
+  [
   {
     path: "/",
     element: <AppLayout />,
@@ -38,4 +41,6 @@ export const router = createBrowserRouter([
       { path: "*", element: <NotFoundPage /> },
     ],
   },
-]);
+  ],
+  { basename: basename || undefined },
+);
