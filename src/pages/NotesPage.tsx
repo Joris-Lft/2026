@@ -8,7 +8,13 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { PageShell } from "@/components/ui/PageShell";
 import { NotesPageSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
-import { useCreateNote, useNoteTagOptions, useNotes, useUpdateNote } from "@/hooks/use-notes";
+import {
+  useCreateNote,
+  useDeleteNote,
+  useNoteTagOptions,
+  useNotes,
+  useUpdateNote,
+} from "@/hooks/use-notes";
 import type { Note, NoteFormInput } from "@/types/notes";
 import { filterNotesByTags } from "@/utils/tags";
 import { splitNotesByStatus } from "@/utils/notes";
@@ -20,6 +26,7 @@ export function NotesPage() {
   const { options: availableTags } = useNoteTagOptions(notes);
   const createNoteMutation = useCreateNote(user?.id, user?.email);
   const updateNoteMutation = useUpdateNote(user?.id, user?.email);
+  const deleteNoteMutation = useDeleteNote(user?.email);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const filteredNotes = useMemo(
@@ -32,7 +39,10 @@ export function NotesPage() {
   const [selectedNote, setSelectedNote] = useState<Note | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const isSubmitting = createNoteMutation.isPending || updateNoteMutation.isPending;
+  const isSubmitting =
+    createNoteMutation.isPending ||
+    updateNoteMutation.isPending ||
+    deleteNoteMutation.isPending;
   const hasNotes = notes.length > 0;
   const hasFilteredNotes = perso.length > 0 || commune.length > 0;
   const isEmpty = !isLoading && !isError && !hasNotes;
@@ -69,6 +79,21 @@ export function NotesPage() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Enregistrement impossible";
+      setFormError(message);
+      throw error;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedNote) return;
+    setFormError(null);
+
+    try {
+      await deleteNoteMutation.mutateAsync(selectedNote.id);
+      closeModal();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Suppression impossible";
       setFormError(message);
       throw error;
     }
@@ -144,7 +169,9 @@ export function NotesPage() {
           availableTags={availableTags}
           onClose={closeModal}
           onSubmit={handleSubmit}
+          onDelete={selectedNote ? handleDelete : undefined}
           isSubmitting={isSubmitting}
+          isDeleting={deleteNoteMutation.isPending}
         />
       )}
     </PageShell>

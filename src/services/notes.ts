@@ -171,3 +171,21 @@ export async function updateNote(
     };
   }
 }
+
+export async function deleteNote(
+  noteId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await notesTable.destroy([noteId]);
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Delete note error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la suppression de la note",
+    };
+  }
+}

@@ -16,6 +16,7 @@ interface ModalProps {
   children: ReactNode;
   maxWidth?: number;
   portal?: boolean;
+  elevated?: boolean;
 }
 
 function joinClasses(...classes: Array<string | false | undefined>) {
@@ -33,6 +34,7 @@ export function Modal({
   children,
   maxWidth,
   portal = false,
+  elevated = false,
 }: ModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -57,6 +59,7 @@ export function Modal({
     <div
       className={joinClasses(
         styles.overlay,
+        elevated && styles.overlayElevated,
         variant === "drawer" && styles.drawerOverlay,
       )}
       onClick={onClose}

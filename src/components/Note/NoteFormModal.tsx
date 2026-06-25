@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Input";
 import { Modal, ModalActions } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useInvitees, useUserDirectory } from "@/hooks/use-users";
 import { isImageAttachment } from "@/utils/attachments";
@@ -18,7 +19,9 @@ interface NoteFormModalProps {
   availableTags?: string[];
   onClose: () => void;
   onSubmit: (value: NoteFormInput) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   isSubmitting?: boolean;
+  isDeleting?: boolean;
 }
 
 type PendingImage = {
@@ -35,10 +38,13 @@ function NoteFormModalContent({
   availableTags = [],
   onClose,
   onSubmit,
+  onDelete,
   isSubmitting = false,
+  isDeleting = false,
 }: Omit<NoteFormModalProps, "isVisible">) {
   const isExistingNote = !!initialNote;
   const [mode, setMode] = useState<ModalMode>(isExistingNote ? "view" : "edit");
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   const { data: invitees = [], isLoading: isLoadingUsers } =
     useInvitees(currentUserId);
@@ -164,6 +170,23 @@ function NoteFormModalContent({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!onDelete) return;
+
+    try {
+      setError(null);
+      await onDelete();
+      setIsDeleteModalVisible(false);
+    } catch (deleteError) {
+      setIsDeleteModalVisible(false);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Impossible de supprimer la note",
+      );
+    }
+  };
+
   const formattedDate = initialNote?.createdAt
     ? new Date(initialNote.createdAt).toLocaleDateString("fr-FR", {
         day: "2-digit",
@@ -207,6 +230,7 @@ function NoteFormModalContent({
     ) : undefined;
 
   return (
+    <>
     <Modal
       open
       portal
@@ -240,7 +264,7 @@ function NoteFormModalContent({
             onCancel={handleCancelEdit}
             onSubmit={() => void handleSubmit()}
             loading={isSubmitting}
-            submitDisabled={isSubmitting}
+            submitDisabled={isSubmitting || isDeleting}
           />
         )
       }
@@ -406,9 +430,36 @@ function NoteFormModalContent({
               </ul>
             )}
           </FormField>
+
+          {isExistingNote && onDelete && (
+            <div className={styles.deleteSection}>
+              <Button
+                variant="danger"
+                fullWidth
+                onClick={() => setIsDeleteModalVisible(true)}
+                disabled={isSubmitting || isDeleting}
+                loading={isDeleting}
+              >
+                Supprimer la note
+              </Button>
+            </div>
+          )}
         </>
       )}
     </Modal>
+
+      {isExistingNote && onDelete && (
+        <ConfirmModal
+          open={isDeleteModalVisible}
+          loading={isDeleting}
+          onClose={() => setIsDeleteModalVisible(false)}
+          onConfirm={() => void handleConfirmDelete()}
+          message="Voulez-vous vraiment supprimer cette note ? Cette action est irréversible."
+          confirmLabel="Supprimer"
+          cancelLabel="Annuler"
+        />
+      )}
+    </>
   );
 }
 
