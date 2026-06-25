@@ -23,6 +23,8 @@ export function ConfirmModal({
   return (
     <Modal
       open={open}
+      portal
+      elevated
       onClose={onClose}
       footer={
         <ModalActions

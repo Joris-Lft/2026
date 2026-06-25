@@ -10,6 +10,10 @@
   animation: overlayEnter 0.2s ease-out;
 }
 
+.overlayElevated {
+  z-index: 300;
+}
+
 .drawerOverlay {
   align-items: flex-end;
   justify-content: center;

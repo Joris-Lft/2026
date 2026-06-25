@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getNoteTagOptions } from "@/services/airtable-meta";
-import { createNote, getNotesForUser, updateNote } from "@/services/notes";
+import {
+  createNote,
+  deleteNote,
+  getNotesForUser,
+  updateNote,
+} from "@/services/notes";
 import type { CreateNoteInput, Note, UpdateNoteInput } from "@/types/notes";
 import { collectUniqueTags } from "@/utils/tags";
 
@@ -66,6 +71,20 @@ export function useUpdateNote(
       const result = await updateNote(userId, input);
       if (!result.note) throw new Error(result.error ?? "Mise à jour impossible");
       return result.note;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: notesQueryKey(userEmail) });
+    },
+  });
+}
+
+export function useDeleteNote(userEmail: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (noteId: string) => {
+      const result = await deleteNote(noteId);
+      if (!result.success) throw new Error(result.error ?? "Suppression impossible");
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: notesQueryKey(userEmail) });
