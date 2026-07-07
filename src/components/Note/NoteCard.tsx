@@ -1,6 +1,7 @@
 import type { Note } from "@/types/notes";
 import { TagList } from "@/components/Tag/Tag";
 import { Card } from "@/components/ui/Card";
+import { Markdown } from "@/components/ui/Markdown";
 import { isImageAttachment } from "@/utils/attachments";
 import styles from "./NoteCard.module.css";
 
@@ -37,7 +38,13 @@ export function NoteCard({ note, onOpen }: NoteCardProps) {
         {formattedDate && <time className={styles.date}>{formattedDate}</time>}
       </div>
 
-      <p className={styles.content}>{note.content || "—"}</p>
+      {note.content ? (
+        <Markdown compact className={styles.content}>
+          {note.content}
+        </Markdown>
+      ) : (
+        <p className={styles.content}>—</p>
+      )}
 
       <TagList tags={note.tags} className={styles.tags} />
 

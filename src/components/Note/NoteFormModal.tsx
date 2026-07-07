@@ -4,6 +4,7 @@ import { TagList, TagSelect } from "@/components/Tag/Tag";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Input";
+import { Markdown } from "@/components/ui/Markdown";
 import { Modal, ModalActions } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -277,7 +278,13 @@ function NoteFormModalContent({
             </time>
           )}
 
-          <p className={styles.readContent}>{initialNote.content || "—"}</p>
+          {initialNote.content ? (
+            <Markdown className={styles.readContent}>
+              {initialNote.content}
+            </Markdown>
+          ) : (
+            <p className={styles.readContent}>—</p>
+          )}
 
           {initialNote.tags.length > 0 && (
             <TagList tags={initialNote.tags} />
@@ -315,6 +322,7 @@ function NoteFormModalContent({
           <FormField
             label="Contenu"
             htmlFor="note-content"
+            hint="Markdown supporté (titres, listes, tableaux…)"
             error={error}
           >
             <Textarea
