@@ -9,3 +9,4 @@ dist-ssr
 
 scripts/hash-password.ts
 env.uu
+.claude
