@@ -1,0 +1,45 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--color-tint-soft);
+}
+
+.coverImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-tint);
+  opacity: 0.6;
+}
+
+.body {
+  padding: 12px 14px 14px;
+}
+
+.name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+.budget {
+  margin-top: 8px;
+}
