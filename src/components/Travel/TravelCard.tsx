@@ -18,7 +18,7 @@ export function TravelCard({ travel, budget, onOpen }: TravelCardProps) {
       as="button"
       className={styles.card}
       onClick={() => onOpen?.(travel)}
-      aria-label={`Ouvrir le voyage ${travel.name}`}
+      aria-label={`Ouvrir le projet ${travel.name}`}
     >
       <div className={styles.cover}>
         {travel.coverUrl ? (

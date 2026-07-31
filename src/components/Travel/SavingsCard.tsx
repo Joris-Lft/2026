@@ -19,7 +19,7 @@ export function SavingsCard() {
       <div className={styles.titleBlock}>
         <span className={styles.title}>
           <PiggyBank size={18} />
-          Cagnotte voyage
+          Cagnotte commune
         </span>
         <span className={styles.total}>{formatCurrency(total)}</span>
       </div>

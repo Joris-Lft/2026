@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTravel,
   getTravelById,
-  getTravelsForUser,
+  getTravels,
   updateTravel,
 } from "@/services/travels";
 import type {
@@ -11,19 +11,19 @@ import type {
   UpdateTravelInput,
 } from "@/types/travels";
 
-export function travelsQueryKey(userEmail: string | undefined) {
-  return ["travels", userEmail] as const;
+// Clé stable (pas de userEmail) : les projets sont partagés entre tous.
+export function travelsQueryKey() {
+  return ["travels"] as const;
 }
 
 export function travelQueryKey(travelId: string | undefined) {
   return ["travel", travelId] as const;
 }
 
-export function useTravels(userEmail: string | undefined) {
+export function useTravels() {
   return useQuery({
-    queryKey: travelsQueryKey(userEmail),
-    queryFn: () => getTravelsForUser(userEmail!),
-    enabled: !!userEmail,
+    queryKey: travelsQueryKey(),
+    queryFn: getTravels,
   });
 }
 
@@ -47,13 +47,13 @@ export function useCreateTravel(userEmail: string | undefined) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: travelsQueryKey(userEmail),
+        queryKey: travelsQueryKey(),
       });
     },
   });
 }
 
-export function useUpdateTravel(userEmail: string | undefined) {
+export function useUpdateTravel() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -64,7 +64,7 @@ export function useUpdateTravel(userEmail: string | undefined) {
     },
     onSuccess: (travel) => {
       void queryClient.invalidateQueries({
-        queryKey: travelsQueryKey(userEmail),
+        queryKey: travelsQueryKey(),
       });
       void queryClient.invalidateQueries({
         queryKey: travelQueryKey(travel.id),

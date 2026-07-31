@@ -13,13 +13,13 @@ import { useTravelBudgetTotals } from "@/hooks/use-travel-budget";
 import { emptyBudgetTotals } from "@/types/travel-budget";
 import { useDeposits } from "@/hooks/use-travel-savings";
 import { useCreateTravel, useTravels } from "@/hooks/use-travels";
-import type { Travel, TravelFormInput } from "@/types/travels";
+import type { Travel, TravelDetailsInput } from "@/types/travels";
 import styles from "./VoyagesPage.module.css";
 
 export function VoyagesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: travels = [], isLoading, isError } = useTravels(user?.email);
+  const { data: travels = [], isLoading, isError } = useTravels();
   const createTravelMutation = useCreateTravel(user?.email);
   const { data: budgetTotals = {} } = useTravelBudgetTotals();
   const { data: deposits = [] } = useDeposits();
@@ -45,7 +45,7 @@ export function VoyagesPage() {
     void navigate(`/voyages/${travel.id}`);
   };
 
-  const handleSubmit = async (value: TravelFormInput) => {
+  const handleSubmit = async (value: TravelDetailsInput) => {
     setFormError(null);
     try {
       const travel = await createTravelMutation.mutateAsync(value);
@@ -62,11 +62,11 @@ export function VoyagesPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Voyages"
+        title="Projets"
         align="center"
         actions={
           <Button pill onClick={openCreateModal}>
-            Nouveau voyage
+            Nouveau projet
           </Button>
         }
       />
@@ -80,9 +80,9 @@ export function VoyagesPage() {
       {isLoading ? (
         <PageLoadingSkeleton />
       ) : isError ? (
-        <EmptyState>Impossible de charger les voyages</EmptyState>
+        <EmptyState>Impossible de charger les projets</EmptyState>
       ) : isEmpty ? (
-        <EmptyState>Aucun voyage pour le moment</EmptyState>
+        <EmptyState>Aucun projet pour le moment</EmptyState>
       ) : (
         <div className={styles.grid}>
           {travels.map((travel) => (

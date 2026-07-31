@@ -54,7 +54,7 @@ export const router = createBrowserRouter(
             ),
           },
           { path: "notes", element: <NotesPage />, handle: { title: "Notes" } },
-          { path: "voyages", element: <VoyagesPage />, handle: { title: "Voyages" } },
+          { path: "voyages", element: <VoyagesPage />, handle: { title: "Projets" } },
           {
             path: "voyages/cagnotte",
             element: <CagnottePage />,
@@ -63,7 +63,7 @@ export const router = createBrowserRouter(
           {
             path: "voyages/:travelId",
             element: <VoyageDetailPage />,
-            handle: { title: "Voyage" },
+            handle: { title: "Projet" },
           },
           { path: "profil", element: <ProfilPage />, handle: { title: "Profil" } },
         ],

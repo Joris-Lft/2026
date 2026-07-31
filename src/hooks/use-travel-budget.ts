@@ -41,7 +41,7 @@ export function useCreateBudgetLine(travelId: string | undefined) {
 
   return useMutation({
     mutationFn: async (input: CreateBudgetLineInput): Promise<BudgetLine> => {
-      if (!travelId) throw new Error("Voyage introuvable");
+      if (!travelId) throw new Error("Projet introuvable");
       const result = await createBudgetLine(travelId, input);
       if (!result.line) throw new Error(result.error ?? "Création impossible");
       return result.line;
@@ -62,7 +62,7 @@ export function useUpdateBudgetLine(travelId: string | undefined) {
 
   return useMutation({
     mutationFn: async (input: UpdateBudgetLineInput): Promise<BudgetLine> => {
-      if (!travelId) throw new Error("Voyage introuvable");
+      if (!travelId) throw new Error("Projet introuvable");
       const result = await updateBudgetLine(travelId, input);
       if (!result.line) throw new Error(result.error ?? "Mise à jour impossible");
       return result.line;

@@ -9,7 +9,7 @@ import { Link, useParams } from "react-router";
 import { ActivitiesSection } from "@/components/Travel/ActivitiesSection";
 import { BudgetProgress } from "@/components/Travel/BudgetProgress";
 import { BudgetSection } from "@/components/Travel/BudgetSection";
-import { TravelEditModal } from "@/components/Travel/TravelEditModal";
+import { TravelFormModal } from "@/components/Travel/TravelFormModal";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -17,7 +17,6 @@ import { Markdown } from "@/components/ui/Markdown";
 import { PageShell } from "@/components/ui/PageShell";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
-import { useAuth } from "@/contexts/auth-context";
 import { useTravelBudget } from "@/hooks/use-travel-budget";
 import { useDeposits } from "@/hooks/use-travel-savings";
 import { useTravel, useUpdateTravel } from "@/hooks/use-travels";
@@ -28,11 +27,14 @@ import styles from "./VoyageDetailPage.module.css";
 
 type TravelTab = "apercu" | "budget" | "activites";
 
-const TRAVEL_TABS: { value: TravelTab; label: string }[] = [
-  { value: "apercu", label: "Aperçu" },
-  { value: "budget", label: "Budget" },
-  { value: "activites", label: "Activités" },
-];
+function buildTravelTabs(isVoyage: boolean): { value: TravelTab; label: string }[] {
+  const tabs: { value: TravelTab; label: string }[] = [
+    { value: "apercu", label: "Aperçu" },
+    { value: "budget", label: "Budget" },
+  ];
+  if (isVoyage) tabs.push({ value: "activites", label: "Activités" });
+  return tabs;
+}
 
 function formatDateRange(start: string, end: string): string | null {
   if (start && end) return `${formatDate(start)} → ${formatDate(end)}`;
@@ -43,9 +45,8 @@ function formatDateRange(start: string, end: string): string | null {
 
 export function VoyageDetailPage() {
   const { travelId } = useParams<{ travelId: string }>();
-  const { user } = useAuth();
   const { data: travel, isLoading, isError } = useTravel(travelId);
-  const updateTravelMutation = useUpdateTravel(user?.email);
+  const updateTravelMutation = useUpdateTravel();
   const { data: budgetLines = [] } = useTravelBudget(travelId);
   const { data: deposits = [] } = useDeposits();
 
@@ -69,19 +70,30 @@ export function VoyageDetailPage() {
   };
 
   const dateRange = travel ? formatDateRange(travel.startDate, travel.endDate) : null;
-  const hasInfos = travel && (travel.destination || dateRange || travel.description);
+  const hasInfos =
+    travel &&
+    (travel.isVoyage
+      ? travel.destination || dateRange || travel.description
+      : travel.description);
+
+  // Onglet effectif : si l'onglet sélectionné n'existe plus (ex. un voyage
+  // repassé en projet classique masque « Activités »), on retombe sur Aperçu.
+  const tabs = travel ? buildTravelTabs(travel.isVoyage) : [];
+  const currentTab: TravelTab = tabs.some((tab) => tab.value === activeTab)
+    ? activeTab
+    : "apercu";
 
   return (
     <PageShell>
       <Link to="/voyages" className={styles.back}>
         <ArrowLeft size={18} />
-        <span>Voyages</span>
+        <span>Projets</span>
       </Link>
 
       {isLoading ? (
         <PageLoadingSkeleton />
       ) : isError || !travel ? (
-        <EmptyState>Voyage introuvable</EmptyState>
+        <EmptyState>Projet introuvable</EmptyState>
       ) : (
         <div className={styles.content}>
           <div className={styles.cover}>
@@ -106,7 +118,7 @@ export function VoyageDetailPage() {
 
           <h1 className={styles.title}>{travel.name}</h1>
 
-          {(travel.destination || dateRange) && (
+          {travel.isVoyage && (travel.destination || dateRange) && (
             <div className={styles.metaRow}>
               {travel.destination && (
                 <span className={styles.metaItem}>
@@ -125,14 +137,14 @@ export function VoyageDetailPage() {
 
           <div className={styles.tabs}>
             <SegmentedControl
-              value={activeTab}
-              options={TRAVEL_TABS}
+              value={currentTab}
+              options={tabs}
               onChange={setActiveTab}
-              ariaLabel="Sections du voyage"
+              ariaLabel="Sections du projet"
             />
           </div>
 
-          {activeTab === "apercu" ? (
+          {currentTab === "apercu" ? (
             <div className={styles.overview}>
               {budgetTotals.total > 0 && (
                 <Card padded>
@@ -146,18 +158,23 @@ export function VoyageDetailPage() {
                 </Card>
               ) : !hasInfos ? (
                 <EmptyState>
-                  Ajoute une destination, des dates et une description avec
-                  « Modifier ».
+                  {travel.isVoyage
+                    ? "Ajoute une destination, des dates et une description avec « Modifier »."
+                    : "Ajoute une description avec « Modifier »."}
                 </EmptyState>
               ) : null}
             </div>
-          ) : activeTab === "budget" ? (
+          ) : currentTab === "budget" ? (
             <BudgetSection
               travelId={travel.id}
-              onShowOnMap={(line) => {
-                setMapFocusId(line.id);
-                setActiveTab("activites");
-              }}
+              onShowOnMap={
+                travel.isVoyage
+                  ? (line) => {
+                      setMapFocusId(line.id);
+                      setActiveTab("activites");
+                    }
+                  : undefined
+              }
             />
           ) : (
             <ActivitiesSection travelId={travel.id} focusId={mapFocusId} />
@@ -166,7 +183,7 @@ export function VoyageDetailPage() {
       )}
 
       {travel && (
-        <TravelEditModal
+        <TravelFormModal
           isVisible={isEditVisible}
           travel={travel}
           onClose={() => setIsEditVisible(false)}

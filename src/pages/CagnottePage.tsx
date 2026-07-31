@@ -71,12 +71,12 @@ export function CagnottePage() {
     <PageShell>
       <Link to="/voyages" className={styles.back}>
         <ArrowLeft size={18} />
-        <span>Voyages</span>
+        <span>Projets</span>
       </Link>
 
       <div className={styles.content}>
         <Card padded className={styles.summary}>
-          <span className={styles.summaryLabel}>Cagnotte voyage</span>
+          <span className={styles.summaryLabel}>Cagnotte commune</span>
           <span className={styles.summaryTotal}>{formatCurrency(total)}</span>
         </Card>
 
