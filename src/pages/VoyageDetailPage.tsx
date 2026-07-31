@@ -18,7 +18,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import { useTravelBudget } from "@/hooks/use-travel-budget";
-import { useDeposits } from "@/hooks/use-travel-savings";
+import { useAvailableSavings } from "@/hooks/use-travel-savings";
 import { useTravel, useUpdateTravel } from "@/hooks/use-travels";
 import { sumBudgetTotals } from "@/types/travel-budget";
 import type { TravelDetailsInput } from "@/types/travels";
@@ -48,15 +48,11 @@ export function VoyageDetailPage() {
   const { data: travel, isLoading, isError } = useTravel(travelId);
   const updateTravelMutation = useUpdateTravel();
   const { data: budgetLines = [] } = useTravelBudget(travelId);
-  const { data: deposits = [] } = useDeposits();
+  const { available: availableSavings } = useAvailableSavings();
 
   const budgetTotals = useMemo(
     () => sumBudgetTotals(budgetLines),
     [budgetLines],
-  );
-  const savings = useMemo(
-    () => deposits.reduce((sum, d) => sum + d.amount, 0),
-    [deposits],
   );
 
   const [isEditVisible, setIsEditVisible] = useState(false);
@@ -148,8 +144,8 @@ export function VoyageDetailPage() {
             <div className={styles.overview}>
               {budgetTotals.total > 0 && (
                 <Card padded>
-                  <h2 className={styles.sectionTitle}>Budget prévisionnel</h2>
-                  <BudgetProgress totals={budgetTotals} saved={savings} />
+                  <h2 className={styles.sectionTitle}>Reste à payer</h2>
+                  <BudgetProgress totals={budgetTotals} saved={availableSavings} />
                 </Card>
               )}
               {travel.description ? (

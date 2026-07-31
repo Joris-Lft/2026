@@ -35,29 +35,6 @@
   color: var(--color-text);
 }
 
-.totalValue.over {
-  color: var(--color-danger);
-}
-
-.progressTrack {
-  width: 100%;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--color-tint-soft);
-  overflow: hidden;
-}
-
-.progressBar {
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: var(--color-tint);
-  transition: width 0.3s ease;
-}
-
-.progressBar.progressOver {
-  background: var(--color-danger);
-}
-
 .addRow {
   display: flex;
   justify-content: flex-end;
@@ -212,6 +189,23 @@
 .lineEstimated {
   font-weight: 700;
   color: var(--color-text);
+}
+
+.lineStruck {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.purchasedBadge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--chart-weight) 18%, transparent);
+  color: var(--chart-weight);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .linePending {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { SavingsCard } from "@/components/Travel/SavingsCard";
 import { TravelCard } from "@/components/Travel/TravelCard";
@@ -11,7 +11,7 @@ import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useTravelBudgetTotals } from "@/hooks/use-travel-budget";
 import { emptyBudgetTotals } from "@/types/travel-budget";
-import { useDeposits } from "@/hooks/use-travel-savings";
+import { useAvailableSavings } from "@/hooks/use-travel-savings";
 import { useCreateTravel, useTravels } from "@/hooks/use-travels";
 import type { Travel, TravelDetailsInput } from "@/types/travels";
 import styles from "./VoyagesPage.module.css";
@@ -21,13 +21,10 @@ export function VoyagesPage() {
   const { user } = useAuth();
   const { data: travels = [], isLoading, isError } = useTravels();
   const createTravelMutation = useCreateTravel(user?.email);
-  const { data: budgetTotals = {} } = useTravelBudgetTotals();
-  const { data: deposits = [] } = useDeposits();
+  const { data: budgetSummary } = useTravelBudgetTotals();
+  const { available: availableSavings } = useAvailableSavings();
 
-  const savings = useMemo(
-    () => deposits.reduce((sum, d) => sum + d.amount, 0),
-    [deposits],
-  );
+  const totalsByTravel = budgetSummary?.totalsByTravel ?? {};
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -90,8 +87,8 @@ export function VoyagesPage() {
               key={travel.id}
               travel={travel}
               budget={{
-                totals: budgetTotals[travel.id] ?? emptyBudgetTotals(),
-                saved: savings,
+                totals: totalsByTravel[travel.id] ?? emptyBudgetTotals(),
+                saved: availableSavings,
               }}
               onOpen={handleOpenTravel}
             />

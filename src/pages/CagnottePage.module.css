@@ -44,6 +44,11 @@
   color: var(--color-text);
 }
 
+.summaryBreakdown {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
 .addRow {
   display: flex;
   justify-content: flex-end;

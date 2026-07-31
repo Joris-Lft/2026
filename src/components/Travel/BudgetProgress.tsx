@@ -40,22 +40,23 @@ function buildCheckpoints(totals: TravelBudgetTotals, saved: number) {
 }
 
 interface BudgetProgressProps {
-  /** Budget prévisionnel du voyage, détaillé par niveau de dépense. */
+  /** Reste à payer, détaillé par niveau de dépense. */
   totals: TravelBudgetTotals;
-  /** Montant déjà disponible dans la cagnotte. */
+  /** Montant disponible dans la cagnotte (déjà borné à 0 par l'appelant). */
   saved: number;
 }
 
 /**
- * Frise d'avancement de la cagnotte sur le budget prévisionnel, annotée des
- * paliers cumulés (strict minimum, confortable, royal).
+ * Frise d'avancement de la cagnotte disponible sur le reste à payer, annotée
+ * des paliers cumulés (strict minimum, confortable, royal).
  */
 export function BudgetProgress({ totals, saved }: BudgetProgressProps) {
   if (totals.total <= 0) return null;
 
-  const progress = Math.min((saved / totals.total) * 100, 100);
-  const isFunded = saved >= totals.total;
-  const checkpoints = buildCheckpoints(totals, saved);
+  const available = Math.max(0, saved);
+  const progress = Math.min((available / totals.total) * 100, 100);
+  const isFunded = available >= totals.total;
+  const checkpoints = buildCheckpoints(totals, available);
 
   return (
     <div className={styles.budget}>
@@ -79,7 +80,7 @@ export function BudgetProgress({ totals, saved }: BudgetProgressProps) {
         aria-valuenow={Math.round(progress)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`Budget financé à ${Math.round(progress)} %${checkpoints
+        aria-label={`Reste à payer financé à ${Math.round(progress)} %${checkpoints
           .map((c) => `, ${c.level} à ${formatCurrency(c.amount, { decimals: 0 })}`)
           .join("")}`}
       >
@@ -104,7 +105,7 @@ export function BudgetProgress({ totals, saved }: BudgetProgressProps) {
 
       <p className={styles.budgetAmounts}>
         <span className={styles.saved}>
-          {formatCurrency(saved, { decimals: 0 })}
+          {formatCurrency(available, { decimals: 0 })}
         </span>
         <span className={styles.estimated}>
           / {formatCurrency(totals.total, { decimals: 0 })}

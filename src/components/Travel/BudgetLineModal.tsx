@@ -59,6 +59,7 @@ function BudgetLineModalContent({
   const [toVisit, setToVisit] = useState(
     initialLine?.toVisit ?? createDefaults?.toVisit ?? false,
   );
+  const [purchased, setPurchased] = useState(initialLine?.purchased ?? false);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
@@ -89,6 +90,7 @@ function BudgetLineModalContent({
         location: location.trim(),
         inBudget,
         toVisit,
+        purchased,
         spendLevel,
       });
       onClose();
@@ -242,6 +244,14 @@ function BudgetLineModalContent({
               onChange={(e) => setInBudget(e.target.checked)}
             />
             <span>Compter dans le budget</span>
+          </label>
+          <label className={styles.flag}>
+            <input
+              type="checkbox"
+              checked={purchased}
+              onChange={(e) => setPurchased(e.target.checked)}
+            />
+            <span>Déjà acheté (sort du reste à payer, déduit de la cagnotte)</span>
           </label>
         </div>
 

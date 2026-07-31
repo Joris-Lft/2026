@@ -15,6 +15,7 @@ import {
 import {
   BUDGET_CATEGORIES,
   isBudgetItem,
+  sumPurchasedSpend,
   type BudgetLine,
   type BudgetLineInput,
   type SpendLevel,
@@ -49,12 +50,14 @@ export function BudgetSection({
   const budgetLines = useMemo(() => lines.filter(isBudgetItem), [lines]);
 
   const totals = useMemo(() => {
-    const estimated = budgetLines.reduce((sum, l) => sum + (l.estimated ?? 0), 0);
-    const actual = budgetLines.reduce((sum, l) => sum + (l.actual ?? 0), 0);
-    const minimum = budgetLines
-      .filter((l) => l.spendLevel === "Strict minimum")
+    const remaining = budgetLines
+      .filter((l) => !l.purchased)
       .reduce((sum, l) => sum + (l.estimated ?? 0), 0);
-    return { estimated, actual, minimum };
+    const paid = sumPurchasedSpend(budgetLines);
+    const minimum = budgetLines
+      .filter((l) => !l.purchased && l.spendLevel === "Strict minimum")
+      .reduce((sum, l) => sum + (l.estimated ?? 0), 0);
+    return { remaining, paid, minimum };
   }, [budgetLines]);
 
   const visibleLines = useMemo(() => {
@@ -76,13 +79,6 @@ export function BudgetSection({
       return a.label.localeCompare(b.label, "fr");
     });
   }, [budgetLines, selectedCategories, search]);
-
-  const hasActual = budgetLines.some((l) => l.actual != null);
-  const progress =
-    totals.estimated > 0
-      ? Math.min((totals.actual / totals.estimated) * 100, 100)
-      : 0;
-  const overBudget = totals.actual > totals.estimated && totals.estimated > 0;
 
   const openCreate = () => {
     setSelectedLine(undefined);
@@ -122,30 +118,20 @@ export function BudgetSection({
       <Card padded className={styles.summary}>
         <div className={styles.totals}>
           <div className={styles.total}>
-            <span className={styles.totalLabel}>Estimé</span>
+            <span className={styles.totalLabel}>Reste à payer</span>
             <span className={styles.totalValue}>
-              {formatCurrency(totals.estimated)}
+              {formatCurrency(totals.remaining)}
             </span>
           </div>
-          {hasActual && (
+          {totals.paid > 0 && (
             <div className={styles.total}>
-              <span className={styles.totalLabel}>Réel</span>
-              <span
-                className={`${styles.totalValue} ${overBudget ? styles.over : ""}`}
-              >
-                {formatCurrency(totals.actual)}
+              <span className={styles.totalLabel}>Déjà payé</span>
+              <span className={styles.totalValue}>
+                {formatCurrency(totals.paid)}
               </span>
             </div>
           )}
         </div>
-        {hasActual && (
-          <div className={styles.progressTrack}>
-            <div
-              className={`${styles.progressBar} ${overBudget ? styles.progressOver : ""}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
         {totals.minimum > 0 && (
           <p className={styles.minimumLine}>
             dont strict minimum (obligatoire) :{" "}
@@ -237,6 +223,9 @@ function BudgetLineRow({
             <span className={`${styles.levelBadge} ${levelClassName(line.spendLevel)}`}>
               {line.spendLevel}
             </span>
+            {line.purchased && (
+              <span className={styles.purchasedBadge}>Acheté</span>
+            )}
             <span className={styles.lineLabel}>{line.label}</span>
           </span>
           {line.notes && <span className={styles.lineNotes}>{line.notes}</span>}
@@ -248,7 +237,9 @@ function BudgetLineRow({
             </span>
           )}
           {line.estimated != null ? (
-            <span className={styles.lineEstimated}>
+            <span
+              className={`${styles.lineEstimated} ${line.purchased ? styles.lineStruck : ""}`}
+            >
               {formatCurrency(line.estimated)}
             </span>
           ) : line.actual == null ? (

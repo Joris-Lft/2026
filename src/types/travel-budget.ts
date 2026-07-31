@@ -55,6 +55,8 @@ export type BudgetLine = {
   location: string;
   inBudget: boolean;
   toVisit: boolean;
+  /** Item déjà acheté : sort du reste à payer, son coût réel est déduit de la cagnotte. */
+  purchased: boolean;
   spendLevel: SpendLevel;
 };
 
@@ -67,18 +69,31 @@ export type BudgetLineInput = {
   location: string;
   inBudget: boolean;
   toVisit: boolean;
+  purchased: boolean;
   spendLevel: SpendLevel;
 };
 
-/** Agrège les montants estimés d'un voyage par niveau de dépense. */
+/**
+ * Agrège le reste à payer d'un projet par niveau de dépense : somme des montants
+ * estimés des items NON encore achetés.
+ */
 export function sumBudgetTotals(lines: BudgetLine[]): TravelBudgetTotals {
   const totals = emptyBudgetTotals();
   for (const line of lines) {
-    if (line.estimated == null) continue;
+    if (line.purchased || line.estimated == null) continue;
     totals.total += line.estimated;
     totals.byLevel[line.spendLevel] += line.estimated;
   }
   return totals;
+}
+
+/** Total dépensé (sortie de cagnotte) : somme du réel payé (ou de l'estimé à défaut) des items achetés. */
+export function sumPurchasedSpend(lines: BudgetLine[]): number {
+  return lines.reduce((sum, line) => {
+    if (!line.purchased) return sum;
+    const spent = line.actual ?? line.estimated;
+    return spent != null ? sum + spent : sum;
+  }, 0);
 }
 
 /** Un item compte dans le budget s'il est explicitement flaggé ou s'il a un prix. */

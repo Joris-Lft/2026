@@ -3,7 +3,7 @@ import {
   createBudgetLine,
   deleteBudgetLine,
   getBudgetForTravel,
-  getEstimatedTotalsByTravel,
+  getBudgetSummary,
   updateBudgetLine,
 } from "@/services/travel-budget";
 import type {
@@ -28,11 +28,11 @@ export function travelBudgetTotalsQueryKey() {
   return ["travel-budget-totals"] as const;
 }
 
-/** Total estimé de chaque voyage, indexé par identifiant de voyage. */
+/** Synthèse budgétaire : reste à payer par projet + dépensé global sur la cagnotte. */
 export function useTravelBudgetTotals() {
   return useQuery({
     queryKey: travelBudgetTotalsQueryKey(),
-    queryFn: getEstimatedTotalsByTravel,
+    queryFn: getBudgetSummary,
   });
 }
 

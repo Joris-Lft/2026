@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { DepositModal } from "@/components/Travel/DepositModal";
@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { useAuth } from "@/contexts/auth-context";
 import {
+  useAvailableSavings,
   useCreateDeposit,
   useDeleteDeposit,
   useDeposits,
@@ -20,6 +21,7 @@ import styles from "./CagnottePage.module.css";
 export function CagnottePage() {
   const { user } = useAuth();
   const { data: deposits = [], isLoading, isError } = useDeposits();
+  const { total, spent, available } = useAvailableSavings();
   const createDeposit = useCreateDeposit();
   const updateDeposit = useUpdateDeposit();
   const deleteDeposit = useDeleteDeposit();
@@ -28,10 +30,6 @@ export function CagnottePage() {
   const [selected, setSelected] = useState<Deposit | undefined>();
 
   const authorName = (user?.Name as string) || user?.email || "";
-  const total = useMemo(
-    () => deposits.reduce((sum, d) => sum + d.amount, 0),
-    [deposits],
-  );
 
   const openCreate = () => {
     setSelected(undefined);
@@ -77,7 +75,12 @@ export function CagnottePage() {
       <div className={styles.content}>
         <Card padded className={styles.summary}>
           <span className={styles.summaryLabel}>Cagnotte commune</span>
-          <span className={styles.summaryTotal}>{formatCurrency(total)}</span>
+          <span className={styles.summaryTotal}>{formatCurrency(available)}</span>
+          {spent > 0 && (
+            <span className={styles.summaryBreakdown}>
+              {formatCurrency(total)} versés · {formatCurrency(spent)} dépensés
+            </span>
+          )}
         </Card>
 
         <div className={styles.addRow}>
