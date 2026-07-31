@@ -76,6 +76,10 @@ export function LoginPage() {
           </Button>
 
           <p className={styles.footer}>
+            <Link to="/forgot-password">Mot de passe oublié ?</Link>
+          </p>
+
+          <p className={styles.footer}>
             Pas encore de compte ?{" "}
             <Link to="/signup">S&apos;inscrire</Link>
           </p>

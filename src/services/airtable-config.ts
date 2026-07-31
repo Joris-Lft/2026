@@ -1,4 +1,4 @@
-function env(key: keyof ImportMetaEnv, fallback = ""): string {
+export function env(key: keyof ImportMetaEnv, fallback = ""): string {
   const viteValue = import.meta.env[key];
   if (viteValue !== undefined && viteValue !== "") {
     return viteValue;
