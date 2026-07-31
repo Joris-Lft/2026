@@ -3,14 +3,8 @@ import {
   type SpendLevel,
   type TravelBudgetTotals,
 } from "@/types/travel-budget";
+import { formatCurrency } from "@/utils/format";
 import styles from "./BudgetProgress.module.css";
-
-const currency = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
 
 const levelClassNames: Record<SpendLevel, string> = {
   "Strict minimum": styles.checkpointMin,
@@ -86,7 +80,7 @@ export function BudgetProgress({ totals, saved }: BudgetProgressProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={`Budget financé à ${Math.round(progress)} %${checkpoints
-          .map((c) => `, ${c.level} à ${currency.format(c.amount)}`)
+          .map((c) => `, ${c.level} à ${formatCurrency(c.amount, { decimals: 0 })}`)
           .join("")}`}
       >
         <div
@@ -109,9 +103,11 @@ export function BudgetProgress({ totals, saved }: BudgetProgressProps) {
       </div>
 
       <p className={styles.budgetAmounts}>
-        <span className={styles.saved}>{currency.format(saved)}</span>
+        <span className={styles.saved}>
+          {formatCurrency(saved, { decimals: 0 })}
+        </span>
         <span className={styles.estimated}>
-          / {currency.format(totals.total)}
+          / {formatCurrency(totals.total, { decimals: 0 })}
         </span>
       </p>
     </div>

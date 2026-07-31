@@ -5,6 +5,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Input, ReadOnlyValue, Textarea } from "@/components/ui/Input";
 import { Modal, ModalActions } from "@/components/ui/Modal";
 import type { Deposit, DepositFormValue } from "@/types/travel-savings";
+import { parseAmount } from "@/utils/format";
 import styles from "./DepositModal.module.css";
 
 interface DepositModalProps {
@@ -20,13 +21,6 @@ interface DepositModalProps {
 
 function todayIso(): string {
   return new Date().toISOString().split("T")[0];
-}
-
-function parseAmount(value: string): number | null {
-  const normalized = value.replace(",", ".").trim();
-  if (normalized === "") return null;
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function DepositModalContent({

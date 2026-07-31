@@ -14,23 +14,8 @@ import {
   useUpdateDeposit,
 } from "@/hooks/use-travel-savings";
 import type { Deposit, DepositFormValue } from "@/types/travel-savings";
+import { formatCurrency, formatDate } from "@/utils/format";
 import styles from "./CagnottePage.module.css";
-
-const currency = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function formatDate(value: string): string {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 export function CagnottePage() {
   const { user } = useAuth();
@@ -92,7 +77,7 @@ export function CagnottePage() {
       <div className={styles.content}>
         <Card padded className={styles.summary}>
           <span className={styles.summaryLabel}>Cagnotte voyage</span>
-          <span className={styles.summaryTotal}>{currency.format(total)}</span>
+          <span className={styles.summaryTotal}>{formatCurrency(total)}</span>
         </Card>
 
         <div className={styles.addRow}>
@@ -127,7 +112,7 @@ export function CagnottePage() {
                     </span>
                   </span>
                   <span className={styles.depositAmount}>
-                    +{currency.format(deposit.amount)}
+                    +{formatCurrency(deposit.amount)}
                   </span>
                 </button>
               </li>

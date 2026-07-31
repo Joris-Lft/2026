@@ -119,11 +119,19 @@ export function PlaceSearchField({ value, onChange }: PlaceSearchFieldProps) {
         />
       </div>
 
-      {isSearching && <p className={styles.status}>Recherche…</p>}
-      {error && <p className={styles.status}>{error}</p>}
+      {isSearching && (
+        <p className={styles.status} role="status" aria-live="polite">
+          Recherche…
+        </p>
+      )}
+      {error && (
+        <p className={styles.status} role="status" aria-live="polite">
+          {error}
+        </p>
+      )}
 
       {results.length > 0 && (
-        <ul className={styles.results}>
+        <ul className={styles.results} aria-label="Résultats de recherche">
           {results.map((place) => (
             <li key={place.id}>
               <button

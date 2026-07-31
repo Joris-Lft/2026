@@ -3,6 +3,7 @@ import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { parseLatLng, type BudgetLine } from "@/types/travel-budget";
+import { buildMapsUrl } from "@/utils/maps";
 import styles from "./ActivitiesMap.module.css";
 
 type MapPoint = {
@@ -21,12 +22,6 @@ const pinIcon = L.divIcon({
   iconAnchor: [15, 28],
   popupAnchor: [0, -26],
 });
-
-function buildMapsUrl(location: string): string {
-  const value = location.trim();
-  if (/^https?:\/\//i.test(value)) return value;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`;
-}
 
 function FitBounds({ points }: { points: MapPoint[] }) {
   const map = useMap();

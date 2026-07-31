@@ -17,23 +17,12 @@ import {
   type BudgetLine,
   type BudgetLineInput,
 } from "@/types/travel-budget";
+import { formatCurrency } from "@/utils/format";
+import { buildMapsUrl } from "@/utils/maps";
 import { ActivitiesMap } from "./ActivitiesMap";
 import { BudgetLineModal } from "./BudgetLineModal";
 import budgetStyles from "./BudgetSection.module.css";
 import styles from "./ActivitiesSection.module.css";
-
-const currency = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function buildMapsUrl(location: string): string {
-  const value = location.trim();
-  if (/^https?:\/\//i.test(value)) return value;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`;
-}
 
 export function ActivitiesSection({
   travelId,
@@ -174,7 +163,7 @@ export function ActivitiesSection({
                     {line.estimated != null && (
                       <span className={budgetStyles.lineAmounts}>
                         <span className={budgetStyles.lineEstimated}>
-                          {currency.format(line.estimated)}
+                          {formatCurrency(line.estimated)}
                         </span>
                       </span>
                     )}

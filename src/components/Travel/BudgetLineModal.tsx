@@ -13,6 +13,7 @@ import {
   type BudgetLineInput,
   type SpendLevel,
 } from "@/types/travel-budget";
+import { parseAmount } from "@/utils/format";
 import { PlaceSearchField } from "./PlaceSearchField";
 import styles from "./BudgetLineModal.module.css";
 
@@ -25,13 +26,6 @@ interface BudgetLineModalProps {
   onDelete?: () => void | Promise<void>;
   isSubmitting?: boolean;
   isDeleting?: boolean;
-}
-
-function parseAmount(value: string): number | null {
-  const normalized = value.replace(",", ".").trim();
-  if (normalized === "") return null;
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function BudgetLineModalContent({

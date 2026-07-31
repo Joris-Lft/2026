@@ -19,6 +19,7 @@ import {
   type BudgetLineInput,
   type SpendLevel,
 } from "@/types/travel-budget";
+import { formatCurrency } from "@/utils/format";
 import { BudgetLineModal } from "./BudgetLineModal";
 import styles from "./BudgetSection.module.css";
 
@@ -26,17 +27,6 @@ function levelClassName(level: SpendLevel): string {
   if (level === "Strict minimum") return styles.levelMin;
   if (level === "Royal") return styles.levelRoyal;
   return styles.levelComfort;
-}
-
-const currency = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function formatAmount(value: number): string {
-  return currency.format(value);
 }
 
 export function BudgetSection({
@@ -134,7 +124,7 @@ export function BudgetSection({
           <div className={styles.total}>
             <span className={styles.totalLabel}>Estimé</span>
             <span className={styles.totalValue}>
-              {formatAmount(totals.estimated)}
+              {formatCurrency(totals.estimated)}
             </span>
           </div>
           {hasActual && (
@@ -143,7 +133,7 @@ export function BudgetSection({
               <span
                 className={`${styles.totalValue} ${overBudget ? styles.over : ""}`}
               >
-                {formatAmount(totals.actual)}
+                {formatCurrency(totals.actual)}
               </span>
             </div>
           )}
@@ -159,7 +149,7 @@ export function BudgetSection({
         {totals.minimum > 0 && (
           <p className={styles.minimumLine}>
             dont strict minimum (obligatoire) :{" "}
-            <strong>{formatAmount(totals.minimum)}</strong>
+            <strong>{formatCurrency(totals.minimum)}</strong>
           </p>
         )}
       </Card>
@@ -254,12 +244,12 @@ function BudgetLineRow({
         <span className={styles.lineAmounts}>
           {line.actual != null && (
             <span className={styles.lineActual}>
-              {formatAmount(line.actual)}
+              {formatCurrency(line.actual)}
             </span>
           )}
           {line.estimated != null ? (
             <span className={styles.lineEstimated}>
-              {formatAmount(line.estimated)}
+              {formatCurrency(line.estimated)}
             </span>
           ) : line.actual == null ? (
             <span className={styles.linePending}>Prix à définir</span>

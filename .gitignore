@@ -8,5 +8,4 @@ dist-ssr
 *.log
 
 scripts/hash-password.ts
-env.uu
 .claude

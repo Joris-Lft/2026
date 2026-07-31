@@ -23,6 +23,7 @@ import { useDeposits } from "@/hooks/use-travel-savings";
 import { useTravel, useUpdateTravel } from "@/hooks/use-travels";
 import { sumBudgetTotals } from "@/types/travel-budget";
 import type { TravelDetailsInput } from "@/types/travels";
+import { formatDate } from "@/utils/format";
 import styles from "./VoyageDetailPage.module.css";
 
 type TravelTab = "apercu" | "budget" | "activites";
@@ -32,14 +33,6 @@ const TRAVEL_TABS: { value: TravelTab; label: string }[] = [
   { value: "budget", label: "Budget" },
   { value: "activites", label: "Activités" },
 ];
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 function formatDateRange(start: string, end: string): string | null {
   if (start && end) return `${formatDate(start)} → ${formatDate(end)}`;

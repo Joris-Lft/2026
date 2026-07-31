@@ -3,14 +3,8 @@ import { ChevronRight, PiggyBank } from "lucide-react";
 import { Link } from "react-router";
 import { Card } from "@/components/ui/Card";
 import { useDeposits } from "@/hooks/use-travel-savings";
+import { formatCurrency } from "@/utils/format";
 import styles from "./SavingsCard.module.css";
-
-const currency = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
 
 export function SavingsCard() {
   const { data: deposits = [] } = useDeposits();
@@ -27,7 +21,7 @@ export function SavingsCard() {
           <PiggyBank size={18} />
           Cagnotte voyage
         </span>
-        <span className={styles.total}>{currency.format(total)}</span>
+        <span className={styles.total}>{formatCurrency(total)}</span>
       </div>
 
       <Link to="/voyages/cagnotte" className={styles.link}>
