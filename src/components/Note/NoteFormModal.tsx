@@ -1,15 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronLeft, CornerUpLeft } from "lucide-react";
 import type { Note, NoteFormInput } from "@/types/notes";
 import { TagList, TagSelect } from "@/components/Tag/Tag";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Input";
 import { Markdown } from "@/components/ui/Markdown";
+import type { WikiLinkOptions } from "@/components/ui/WikiLink";
 import { Modal, ModalActions } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import type { NoteLinkCandidate } from "@/hooks/use-note-links";
+import {
+  optionId,
+  useWikiLinkAutocomplete,
+} from "@/hooks/use-wikilink-autocomplete";
 import { useInvitees, useUserDirectory } from "@/hooks/use-users";
+import { WikiLinkSuggestions } from "./WikiLinkSuggestions";
 import { isImageAttachment } from "@/utils/attachments";
+import { deriveNoteTitle } from "@/utils/notes";
 import { mergeOptions, resolveOptionLabel } from "@/utils/options";
 import { uploadImageFiles } from "@/utils/upload-image";
 import styles from "./NoteFormModal.module.css";
@@ -20,10 +29,26 @@ interface NoteFormModalProps {
   initialNote?: Note;
   availableTags?: string[];
   onClose: () => void;
-  onSubmit: (value: NoteFormInput) => void | Promise<void>;
+  /** Retourner `false` annule l'enregistrement et laisse la modale en édition. */
+  onSubmit: (value: NoteFormInput) => void | boolean | Promise<void | boolean>;
+  /**
+   * Validation demandée AVANT l'upload des images (retourner `false` annule) :
+   * annuler après coup laisserait des images orphelines chez l'hébergeur.
+   */
+  onBeforeSubmit?: (content: string) => boolean | Promise<boolean>;
   onDelete?: () => void | Promise<void>;
   isSubmitting?: boolean;
   isDeleting?: boolean;
+  /** Active les liens `[[...]]` dans le rendu markdown de la note. */
+  wikiLinks?: WikiLinkOptions;
+  /** Notes qui pointent vers celle-ci. */
+  backlinks?: NoteLinkCandidate[];
+  /** Notes proposées par l'autocomplétion `[[`. */
+  noteCandidates?: NoteLinkCandidate[];
+  onNavigateToNote?: (noteId: string) => void;
+  /** Retour à la note précédente de la pile de navigation. */
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 type PendingImage = {
@@ -40,9 +65,16 @@ function NoteFormModalContent({
   availableTags = [],
   onClose,
   onSubmit,
+  onBeforeSubmit,
   onDelete,
   isSubmitting = false,
   isDeleting = false,
+  wikiLinks,
+  backlinks = [],
+  noteCandidates = [],
+  onNavigateToNote,
+  onBack,
+  backLabel,
 }: Omit<NoteFormModalProps, "isVisible">) {
   const isExistingNote = !!initialNote;
   const [mode, setMode] = useState<ModalMode>(isExistingNote ? "view" : "edit");
@@ -66,6 +98,16 @@ function NoteFormModalContent({
   const [createdTags, setCreatedTags] = useState<string[]>([]);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsId = `${useId()}-wikilinks`;
+  const autocomplete = useWikiLinkAutocomplete({
+    value: content,
+    onChange: setContent,
+    textareaRef,
+    candidates: noteCandidates,
+    currentNoteId: initialNote?.id,
+  });
 
   const tagOptions = mergeOptions(
     availableTags,
@@ -158,16 +200,25 @@ function NoteFormModalContent({
 
     try {
       setError(null);
+
+      // Avant tout upload : une annulation ici ne coûte rien.
+      if (onBeforeSubmit && (await onBeforeSubmit(content.trim())) === false) {
+        return;
+      }
+
       const uploadedUrls = await uploadImageFiles(
         pendingImages.map((image) => image.file),
       );
 
-      await onSubmit({
+      const result = await onSubmit({
         content: content.trim(),
         inviteeIds,
         attachmentUrls: [...keptAttachmentUrls, ...uploadedUrls],
         tags,
       });
+
+      // L'appelant a annulé (ex. confirmation de changement de titre refusée).
+      if (result === false) return;
 
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       onClose();
@@ -221,8 +272,8 @@ function NoteFormModalContent({
 
   const title =
     mode === "view"
-      ? initialNote && initialNote.noteNumber > 0
-        ? `Note #${initialNote.noteNumber}`
+      ? initialNote
+        ? deriveNoteTitle(initialNote)
         : "Note"
       : isExistingNote
         ? "Modifier la note"
@@ -230,15 +281,20 @@ function NoteFormModalContent({
 
   const statusBadge =
     mode === "view" && initialNote ? (
-      <span
-        className={
-          initialNote.status === "Commune"
-            ? styles.statusCommune
-            : styles.statusPerso
-        }
-      >
-        {initialNote.status}
-      </span>
+      <>
+        {initialNote.noteNumber > 0 && (
+          <span className={styles.noteNumber}>#{initialNote.noteNumber}</span>
+        )}
+        <span
+          className={
+            initialNote.status === "Commune"
+              ? styles.statusCommune
+              : styles.statusPerso
+          }
+        >
+          {initialNote.status}
+        </span>
+      </>
     ) : undefined;
 
   return (
@@ -289,6 +345,13 @@ function NoteFormModalContent({
     >
       {mode === "view" && initialNote ? (
         <div className={styles.readBody}>
+          {onBack && (
+            <button type="button" className={styles.backRow} onClick={onBack}>
+              <ChevronLeft size={14} aria-hidden />
+              {backLabel ? `Retour à « ${backLabel} »` : "Retour"}
+            </button>
+          )}
+
           {formattedDate && (
             <time className={styles.readMeta} dateTime={initialNote.createdAt}>
               {formattedDate}
@@ -296,7 +359,7 @@ function NoteFormModalContent({
           )}
 
           {initialNote.content ? (
-            <Markdown className={styles.readContent}>
+            <Markdown className={styles.readContent} wikiLinks={wikiLinks}>
               {initialNote.content}
             </Markdown>
           ) : (
@@ -333,26 +396,73 @@ function NoteFormModalContent({
               Partagée avec {sharedWithEmails.join(", ")}
             </p>
           )}
+
+          {backlinks.length > 0 && onNavigateToNote && (
+            <section className={styles.backlinks}>
+              <h3 className={styles.backlinksTitle}>
+                <CornerUpLeft size={14} aria-hidden />
+                Liens entrants ({backlinks.length})
+              </h3>
+              <ul className={styles.backlinksList}>
+                {backlinks.map((source) => (
+                  <li key={source.id}>
+                    <button
+                      type="button"
+                      className={styles.backlinkItem}
+                      onClick={() => onNavigateToNote(source.id)}
+                    >
+                      {source.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       ) : (
         <>
           <FormField
             label="Contenu"
             htmlFor="note-content"
-            hint="Markdown supporté (titres, listes, tableaux…)"
+            hint="Markdown supporté. Tapez « [[ » pour lier une autre note."
             error={error}
           >
             <Textarea
               id="note-content"
+              ref={textareaRef}
               placeholder="Écrivez votre note..."
               value={content}
               onChange={(e) => {
                 setContent(e.target.value);
                 if (error) setError(null);
+                autocomplete.syncFromCaret();
               }}
+              onKeyUp={autocomplete.syncFromCaret}
+              onClick={autocomplete.syncFromCaret}
+              onBlur={autocomplete.close}
+              onKeyDown={autocomplete.handleKeyDown}
               rows={5}
+              role="combobox"
+              aria-expanded={autocomplete.isOpen}
+              aria-controls={autocomplete.isOpen ? suggestionsId : undefined}
+              aria-activedescendant={
+                autocomplete.isOpen
+                  ? optionId(suggestionsId, autocomplete.activeIndex)
+                  : undefined
+              }
+              aria-autocomplete="list"
             />
           </FormField>
+
+          {autocomplete.isOpen && (
+            <WikiLinkSuggestions
+              id={suggestionsId}
+              suggestions={autocomplete.suggestions}
+              activeIndex={autocomplete.activeIndex}
+              onHighlight={autocomplete.setActiveIndex}
+              onSelect={autocomplete.insert}
+            />
+          )}
 
           <div className={styles.imagesSection}>
             <span className={styles.sectionLabel}>Images</span>

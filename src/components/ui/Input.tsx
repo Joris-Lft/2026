@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { ComponentProps, InputHTMLAttributes } from "react";
 import styles from "./Input.module.css";
 
 export function Input({
@@ -13,10 +13,9 @@ export function Input({
   );
 }
 
-export function Textarea({
-  className,
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+// ComponentProps (et non TextareaHTMLAttributes) pour que `ref` soit accepté :
+// React 19 passe bien la ref comme prop, seul le type manquait.
+export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return (
     <textarea
       className={className ? `${styles.textarea} ${className}` : styles.textarea}
