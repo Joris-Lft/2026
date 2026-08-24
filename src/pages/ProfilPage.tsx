@@ -19,6 +19,11 @@ const NAV_SETTINGS = [
     label: "Mensurations",
     description: "Afficher l'onglet de suivi des mensurations",
   },
+  {
+    feature: "personalProjects" as const,
+    label: "Projets perso",
+    description: "Afficher l'onglet des projets personnels",
+  },
 ];
 
 export function ProfilPage() {

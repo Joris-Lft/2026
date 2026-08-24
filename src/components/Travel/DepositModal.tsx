@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input, ReadOnlyValue, Textarea } from "@/components/ui/Input";
@@ -98,6 +97,10 @@ function DepositModalContent({
             onSubmit={() => void handleSubmit()}
             loading={isSubmitting}
             submitDisabled={isSubmitting || isDeleting}
+            onDelete={
+              isEditing && onDelete ? () => setIsConfirmVisible(true) : undefined
+            }
+            deleteLoading={isDeleting}
           />
         }
       >
@@ -142,19 +145,6 @@ function DepositModalContent({
           />
         </FormField>
 
-        {isEditing && onDelete && (
-          <div className={styles.deleteSection}>
-            <Button
-              variant="danger"
-              fullWidth
-              onClick={() => setIsConfirmVisible(true)}
-              disabled={isSubmitting || isDeleting}
-              loading={isDeleting}
-            >
-              Supprimer le versement
-            </Button>
-          </div>
-        )}
       </Modal>
 
       {isEditing && onDelete && (

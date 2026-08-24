@@ -1,6 +1,6 @@
 import { Navigate } from "react-router";
 import type { ReactNode } from "react";
-import { getDefaultNavRoute } from "@/constants/navigation";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { useNavigationPreferences } from "@/contexts/navigation-preferences-context";
 import type { NavFeature } from "@/types/navigation-preferences";
 
@@ -18,7 +18,7 @@ export function FeatureRoute({
   }
 
   if (!preferences[feature]) {
-    return <Navigate to={getDefaultNavRoute(preferences)} replace />;
+    return <Navigate to={HOME_ROUTE} replace />;
   }
 
   return children;

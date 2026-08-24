@@ -5,7 +5,7 @@ import {
   MapPin,
   Pencil,
 } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { ActivitiesSection } from "@/components/Travel/ActivitiesSection";
 import { BudgetProgress } from "@/components/Travel/BudgetProgress";
 import { BudgetSection } from "@/components/Travel/BudgetSection";
@@ -17,15 +17,28 @@ import { Markdown } from "@/components/ui/Markdown";
 import { PageShell } from "@/components/ui/PageShell";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
+import {
+  isPersonalScope,
+  PROJECT_SCOPES,
+  type ProjectScope,
+} from "@/constants/project-scope";
 import { useTravelBudget } from "@/hooks/use-travel-budget";
 import { useAvailableSavings } from "@/hooks/use-travel-savings";
-import { useTravel, useUpdateTravel } from "@/hooks/use-travels";
+import {
+  useDeleteTravel,
+  useTravel,
+  useUpdateTravel,
+} from "@/hooks/use-travels";
 import { sumBudgetTotals } from "@/types/travel-budget";
 import type { TravelDetailsInput } from "@/types/travels";
 import { formatDate } from "@/utils/format";
-import styles from "./VoyageDetailPage.module.css";
+import styles from "./ProjetDetailPage.module.css";
 
 type TravelTab = "apercu" | "budget" | "activites";
+
+type ProjetDetailPageProps = {
+  scope: ProjectScope;
+};
 
 function buildTravelTabs(isVoyage: boolean): { value: TravelTab; label: string }[] {
   const tabs: { value: TravelTab; label: string }[] = [
@@ -43,12 +56,22 @@ function formatDateRange(start: string, end: string): string | null {
   return null;
 }
 
-export function VoyageDetailPage() {
+export function ProjetDetailPage({ scope }: ProjetDetailPageProps) {
   const { travelId } = useParams<{ travelId: string }>();
-  const { data: travel, isLoading, isError } = useTravel(travelId);
-  const updateTravelMutation = useUpdateTravel();
+  const navigate = useNavigate();
+  const { basePath, listTitle } = PROJECT_SCOPES[scope];
+  const { data: loadedTravel, isLoading, isError } = useTravel(travelId);
+  const updateTravelMutation = useUpdateTravel(scope);
+  const deleteTravelMutation = useDeleteTravel(scope);
   const { data: budgetLines = [] } = useTravelBudget(travelId);
-  const { available: availableSavings } = useAvailableSavings();
+  const { available: availableSavings } = useAvailableSavings(scope);
+
+  // Un projet ne s'ouvre que depuis les URLs de son propre périmètre : un projet
+  // commun n'est pas consultable sous /projets-perso, et inversement.
+  const travel =
+    loadedTravel && loadedTravel.isPersonal === isPersonalScope(scope)
+      ? loadedTravel
+      : undefined;
 
   const budgetTotals = useMemo(
     () => sumBudgetTotals(budgetLines),
@@ -63,6 +86,13 @@ export function VoyageDetailPage() {
     if (!travel) return;
     await updateTravelMutation.mutateAsync({ ...value, id: travel.id });
     setIsEditVisible(false);
+  };
+
+  const handleDelete = async () => {
+    if (!travel) return;
+    await deleteTravelMutation.mutateAsync(travel.id);
+    setIsEditVisible(false);
+    void navigate(basePath, { replace: true });
   };
 
   const dateRange = travel ? formatDateRange(travel.startDate, travel.endDate) : null;
@@ -81,9 +111,9 @@ export function VoyageDetailPage() {
 
   return (
     <PageShell>
-      <Link to="/voyages" className={styles.back}>
+      <Link to={basePath} className={styles.back}>
         <ArrowLeft size={18} />
-        <span>Projets</span>
+        <span>{listTitle}</span>
       </Link>
 
       {isLoading ? (
@@ -184,7 +214,9 @@ export function VoyageDetailPage() {
           travel={travel}
           onClose={() => setIsEditVisible(false)}
           onSubmit={handleSubmit}
+          onDelete={handleDelete}
           isSubmitting={updateTravelMutation.isPending}
+          isDeleting={deleteTravelMutation.isPending}
         />
       )}
     </PageShell>

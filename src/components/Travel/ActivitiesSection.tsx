@@ -4,6 +4,7 @@ import { TagFilter } from "@/components/Tag/Tag";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
+import { Markdown } from "@/components/ui/Markdown";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import {
   useCreateBudgetLine,
@@ -155,9 +156,9 @@ export function ActivitiesSection({
                         </span>
                       </span>
                       {line.notes && (
-                        <span className={budgetStyles.lineNotes}>
+                        <Markdown compact className={budgetStyles.lineNotes}>
                           {line.notes}
-                        </span>
+                        </Markdown>
                       )}
                     </span>
                     {line.estimated != null && (

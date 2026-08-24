@@ -1,3 +1,4 @@
+import type { ProjectScope } from "@/constants/project-scope";
 import type {
   CreateTravelInput,
   Travel,
@@ -10,11 +11,13 @@ import {
   AIRTABLE_TRAVELS_DESCRIPTION_FIELD,
   AIRTABLE_TRAVELS_DESTINATION_FIELD,
   AIRTABLE_TRAVELS_END_DATE_FIELD,
+  AIRTABLE_TRAVELS_IS_PERSONAL_FIELD,
   AIRTABLE_TRAVELS_IS_VOYAGE_FIELD,
   AIRTABLE_TRAVELS_NAME_FIELD,
   AIRTABLE_TRAVELS_START_DATE_FIELD,
   AIRTABLE_TRAVELS_USER_ID_FIELD,
 } from "./airtable-config";
+import { deleteBudgetLinesForTravel } from "./travel-budget";
 
 type AirtableAttachmentInput = { url: string };
 
@@ -36,6 +39,7 @@ function mapRecordToTravel(record: {
     name: String(record.fields[AIRTABLE_TRAVELS_NAME_FIELD] ?? ""),
     coverUrl: mapCoverUrl(record.fields[AIRTABLE_TRAVELS_COVER_FIELD]),
     isVoyage: Boolean(record.fields[AIRTABLE_TRAVELS_IS_VOYAGE_FIELD]),
+    isPersonal: Boolean(record.fields[AIRTABLE_TRAVELS_IS_PERSONAL_FIELD]),
     destination: String(record.fields[AIRTABLE_TRAVELS_DESTINATION_FIELD] ?? ""),
     startDate: String(record.fields[AIRTABLE_TRAVELS_START_DATE_FIELD] ?? ""),
     endDate: String(record.fields[AIRTABLE_TRAVELS_END_DATE_FIELD] ?? ""),
@@ -54,11 +58,27 @@ function toCoverField(coverUrl: string | null): AirtableAttachmentInput[] {
   return coverUrl ? [{ url: coverUrl }] : [];
 }
 
-// Les projets sont partagés : tous les utilisateurs voient tous les projets
-// (comme la cagnotte et le budget, déjà communs). Le champ user_id reste écrit
-// à la création comme métadonnée « créateur », mais ne sert plus à filtrer.
-export async function getTravels(): Promise<Travel[]> {
-  const records = await travelsTable.select().all();
+function buildScopeFilter(scope: ProjectScope, userEmail: string): string {
+  if (scope === "personal") {
+    return `AND({${AIRTABLE_TRAVELS_IS_PERSONAL_FIELD}}, {${AIRTABLE_TRAVELS_USER_ID_FIELD}} = "${userEmail}")`;
+  }
+  return `NOT({${AIRTABLE_TRAVELS_IS_PERSONAL_FIELD}})`;
+}
+
+/**
+ * Projets communs : partagés entre tous les utilisateurs (le champ user_id n'est
+ * qu'une métadonnée « créateur »). Projets perso : réservés à leur créateur,
+ * identifié par son email dans user_id.
+ */
+export async function getTravels(
+  scope: ProjectScope,
+  userEmail: string | undefined,
+): Promise<Travel[]> {
+  if (scope === "personal" && !userEmail) return [];
+
+  const records = await travelsTable
+    .select({ filterByFormula: buildScopeFilter(scope, userEmail ?? "") })
+    .all();
   return sortTravelsByCreatedAt(records.map(mapRecordToTravel));
 }
 
@@ -70,6 +90,7 @@ export async function getTravelById(travelId: string): Promise<Travel> {
 export async function createTravel(
   userEmail: string,
   input: CreateTravelInput,
+  scope: ProjectScope,
 ): Promise<{ travel: Travel | null; error?: string }> {
   try {
     const name = input.name.trim();
@@ -84,6 +105,7 @@ export async function createTravel(
       [AIRTABLE_TRAVELS_USER_ID_FIELD]: userEmail,
       [AIRTABLE_TRAVELS_CREATED_AT_FIELD]: createdAt,
       [AIRTABLE_TRAVELS_IS_VOYAGE_FIELD]: input.isVoyage,
+      [AIRTABLE_TRAVELS_IS_PERSONAL_FIELD]: scope === "personal",
       [AIRTABLE_TRAVELS_DESTINATION_FIELD]: input.destination.trim(),
       [AIRTABLE_TRAVELS_START_DATE_FIELD]: input.startDate || null,
       [AIRTABLE_TRAVELS_END_DATE_FIELD]: input.endDate || null,
@@ -141,10 +163,15 @@ export async function updateTravel(
   }
 }
 
+/**
+ * Supprime le projet et, en amont, ses lignes de budget et activités : le champ
+ * travel_id de TravelBudget est un simple texte, Airtable ne cascade pas.
+ */
 export async function deleteTravel(
   travelId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    await deleteBudgetLinesForTravel(travelId);
     await travelsTable.destroy([travelId]);
     return { success: true };
   } catch (error: unknown) {

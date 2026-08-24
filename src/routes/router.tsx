@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { RouteErrorPage } from "@/components/errors/RouteErrorPage";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
@@ -11,10 +11,11 @@ import { CagnottePage } from "@/pages/CagnottePage";
 import { ProfilPage } from "@/pages/ProfilPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { SignupPage } from "@/pages/SignupPage";
-import { VoyageDetailPage } from "@/pages/VoyageDetailPage";
-import { VoyagesPage } from "@/pages/VoyagesPage";
-import { DefaultRedirect } from "@/routes/DefaultRedirect";
+import { ProjetDetailPage } from "@/pages/ProjetDetailPage";
+import { ProjetsPage } from "@/pages/ProjetsPage";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { FeatureRoute } from "@/routes/FeatureRoute";
+import { LegacyTravelRedirect } from "@/routes/LegacyTravelRedirect";
 import { GuestRoute, ProtectedRoute } from "@/routes/RouteGuards";
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -26,7 +27,7 @@ export const router = createBrowserRouter(
     element: <AppLayout />,
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <DefaultRedirect /> },
+      { index: true, element: <Navigate to={HOME_ROUTE} replace /> },
       {
         element: <GuestRoute />,
         children: [
@@ -58,17 +59,55 @@ export const router = createBrowserRouter(
             ),
           },
           { path: "notes", element: <NotesPage />, handle: { title: "Notes" } },
-          { path: "voyages", element: <VoyagesPage />, handle: { title: "Projets" } },
           {
-            path: "voyages/cagnotte",
-            element: <CagnottePage />,
-            handle: { title: "Cagnotte" },
+            path: "projets-communs",
+            element: <ProjetsPage scope="shared" />,
+            handle: { title: "Projets communs" },
           },
           {
-            path: "voyages/:travelId",
-            element: <VoyageDetailPage />,
+            path: "projets-communs/cagnotte",
+            element: <CagnottePage scope="shared" />,
+            handle: { title: "Cagnotte commune" },
+          },
+          {
+            path: "projets-communs/:travelId",
+            element: <ProjetDetailPage scope="shared" />,
             handle: { title: "Projet" },
           },
+          {
+            path: "projets-perso",
+            handle: { title: "Projets perso" },
+            element: (
+              <FeatureRoute feature="personalProjects">
+                <ProjetsPage scope="personal" />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "projets-perso/cagnotte",
+            handle: { title: "Ma cagnotte" },
+            element: (
+              <FeatureRoute feature="personalProjects">
+                <CagnottePage scope="personal" />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "projets-perso/:travelId",
+            handle: { title: "Projet perso" },
+            element: (
+              <FeatureRoute feature="personalProjects">
+                <ProjetDetailPage scope="personal" />
+              </FeatureRoute>
+            ),
+          },
+          // Anciennes URLs des projets, avant le renommage /voyages → /projets-communs.
+          { path: "voyages", element: <Navigate to="/projets-communs" replace /> },
+          {
+            path: "voyages/cagnotte",
+            element: <Navigate to="/projets-communs/cagnotte" replace />,
+          },
+          { path: "voyages/:travelId", element: <LegacyTravelRedirect /> },
           { path: "profil", element: <ProfilPage />, handle: { title: "Profil" } },
         ],
       },

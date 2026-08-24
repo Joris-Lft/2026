@@ -107,6 +107,15 @@
 
 .footer > * {
   flex: 1;
+  /* Laisse les boutons rétrécir au lieu de déborder du panneau sur mobile. */
+  min-width: 0;
+}
+
+/* Action destructive : largeur au contenu et collée à gauche, pour la tenir à
+   distance du bouton de validation et limiter les clics par erreur. */
+.footer > .deleteAction {
+  flex: 0 0 auto;
+  margin-right: auto;
 }
 
 @keyframes overlayEnter {

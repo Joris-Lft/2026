@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Travel, TravelDetailsInput } from "@/types/travels";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Modal, ModalActions } from "@/components/ui/Modal";
@@ -13,7 +14,10 @@ interface TravelFormModalProps {
   travel?: Travel;
   onClose: () => void;
   onSubmit: (value: TravelDetailsInput) => void | Promise<void>;
+  /** Suppression du projet ; proposée uniquement en édition. */
+  onDelete?: () => void | Promise<void>;
   isSubmitting?: boolean;
+  isDeleting?: boolean;
 }
 
 type PendingCover = {
@@ -25,7 +29,9 @@ function TravelFormModalContent({
   travel,
   onClose,
   onSubmit,
+  onDelete,
   isSubmitting = false,
+  isDeleting = false,
 }: Omit<TravelFormModalProps, "isVisible">) {
   const isEditing = Boolean(travel);
   const [name, setName] = useState(travel?.name ?? "");
@@ -39,6 +45,7 @@ function TravelFormModalContent({
   );
   const [pendingCover, setPendingCover] = useState<PendingCover | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -111,6 +118,22 @@ function TravelFormModalContent({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!onDelete) return;
+    try {
+      setError(null);
+      await onDelete();
+      setIsConfirmVisible(false);
+    } catch (deleteError) {
+      setIsConfirmVisible(false);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Suppression impossible",
+      );
+    }
+  };
+
   const submitLabel = isSubmitting
     ? isEditing
       ? "Enregistrement..."
@@ -120,117 +143,135 @@ function TravelFormModalContent({
       : "Créer";
 
   return (
-    <Modal
-      open
-      portal
-      variant="drawer"
-      onClose={handleClose}
-      title={isEditing ? "Modifier le projet" : "Nouveau projet"}
-      titleId="travel-form-title"
-      footer={
-        <ModalActions
-          submitLabel={submitLabel}
-          onCancel={handleClose}
-          onSubmit={() => void handleSubmit()}
-          loading={isSubmitting}
-          submitDisabled={isSubmitting}
-        />
-      }
-    >
-      <FormField label="Nom du projet" htmlFor="travel-name" error={error}>
-        <Input
-          id="travel-name"
-          placeholder="Ex. Week-end à Rome"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            if (error) setError(null);
-          }}
-          autoFocus={!isEditing}
-        />
-      </FormField>
-
-      <FormField label="Photo" hint="Optionnelle — JPG, PNG, GIF, WebP…">
-        {currentPreview ? (
-          <div className={styles.coverPreview}>
-            <img src={currentPreview} alt="" className={styles.coverImage} />
-            <button
-              type="button"
-              className={styles.removeButton}
-              onClick={removeCover}
-              aria-label="Retirer la photo"
-              disabled={isSubmitting}
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <label className={styles.fileInputLabel}>
-            Choisir une photo
-            <input
-              type="file"
-              accept="image/*"
-              className={styles.fileInput}
-              onChange={handleCoverSelect}
-              disabled={isSubmitting}
-            />
-          </label>
-        )}
-      </FormField>
-
-      <Checkbox
-        checked={isVoyage}
-        onChange={setIsVoyage}
-        label="Ce projet est un voyage"
-        hint="Ajoute une destination, des dates et une carte des lieux."
-      />
-
-      {isVoyage && (
-        <>
-          <FormField label="Destination" htmlFor="travel-destination">
-            <Input
-              id="travel-destination"
-              placeholder="Ex. Kyoto, Japon"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-            />
-          </FormField>
-
-          <div className={styles.dateRow}>
-            <FormField label="Date de début" htmlFor="travel-start">
-              <Input
-                id="travel-start"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </FormField>
-            <FormField label="Date de fin" htmlFor="travel-end">
-              <Input
-                id="travel-end"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </FormField>
-          </div>
-        </>
-      )}
-
-      <FormField
-        label="Description"
-        htmlFor="travel-description"
-        hint="Markdown supporté (titres, listes…)"
+    <>
+      <Modal
+        open
+        portal
+        variant="drawer"
+        onClose={handleClose}
+        title={isEditing ? "Modifier le projet" : "Nouveau projet"}
+        titleId="travel-form-title"
+        footer={
+          <ModalActions
+            submitLabel={submitLabel}
+            onCancel={handleClose}
+            onSubmit={() => void handleSubmit()}
+            loading={isSubmitting}
+            submitDisabled={isSubmitting || isDeleting}
+            onDelete={
+              isEditing && onDelete ? () => setIsConfirmVisible(true) : undefined
+            }
+            deleteLoading={isDeleting}
+          />
+        }
       >
-        <Textarea
-          id="travel-description"
-          placeholder="Notes, idées, programme..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={5}
+        <FormField label="Nom du projet" htmlFor="travel-name" error={error}>
+          <Input
+            id="travel-name"
+            placeholder="Ex. Week-end à Rome"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (error) setError(null);
+            }}
+            autoFocus={!isEditing}
+          />
+        </FormField>
+
+        <FormField label="Photo" hint="Optionnelle — JPG, PNG, GIF, WebP…">
+          {currentPreview ? (
+            <div className={styles.coverPreview}>
+              <img src={currentPreview} alt="" className={styles.coverImage} />
+              <button
+                type="button"
+                className={styles.removeButton}
+                onClick={removeCover}
+                aria-label="Retirer la photo"
+                disabled={isSubmitting}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <label className={styles.fileInputLabel}>
+              Choisir une photo
+              <input
+                type="file"
+                accept="image/*"
+                className={styles.fileInput}
+                onChange={handleCoverSelect}
+                disabled={isSubmitting}
+              />
+            </label>
+          )}
+        </FormField>
+
+        <Checkbox
+          checked={isVoyage}
+          onChange={setIsVoyage}
+          label="Ce projet est un voyage"
+          hint="Ajoute une destination, des dates et une carte des lieux."
         />
-      </FormField>
-    </Modal>
+
+        {isVoyage && (
+        <>
+            <FormField label="Destination" htmlFor="travel-destination">
+              <Input
+                id="travel-destination"
+                placeholder="Ex. Kyoto, Japon"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+              />
+            </FormField>
+
+            <div className={styles.dateRow}>
+              <FormField label="Date de début" htmlFor="travel-start">
+                <Input
+                  id="travel-start"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Date de fin" htmlFor="travel-end">
+                <Input
+                  id="travel-end"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </FormField>
+            </div>
+        </>
+        )}
+
+        <FormField
+          label="Description"
+          htmlFor="travel-description"
+          hint="Markdown supporté (titres, listes…)"
+        >
+          <Textarea
+            id="travel-description"
+            placeholder="Notes, idées, programme..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={5}
+          />
+        </FormField>
+      </Modal>
+
+      {isEditing && onDelete && (
+        <ConfirmModal
+          open={isConfirmVisible}
+          loading={isDeleting}
+          onClose={() => setIsConfirmVisible(false)}
+          onConfirm={() => void handleConfirmDelete()}
+          message="Supprimer ce projet ? Son budget et ses activités seront également supprimés."
+          confirmLabel="Supprimer"
+          cancelLabel="Annuler"
+        />
+      )}
+    </>
   );
 }
 

@@ -1,11 +1,12 @@
 import { Link } from "react-router";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import styles from "@/components/errors/ErrorPage.module.css";
 
 export function NotFoundPage() {
   const { isAuthenticated } = useAuth();
-  const homeTo = isAuthenticated ? "/habits" : "/login";
-  const homeLabel = isAuthenticated ? "Retour aux habits" : "Retour à la connexion";
+  const homeTo = isAuthenticated ? HOME_ROUTE : "/login";
+  const homeLabel = isAuthenticated ? "Retour aux notes" : "Retour à la connexion";
 
   return (
     <div className={styles.page}>
