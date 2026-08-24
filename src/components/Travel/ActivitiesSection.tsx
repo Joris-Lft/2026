@@ -7,19 +7,21 @@ import { Input } from "@/components/ui/Input";
 import { Markdown } from "@/components/ui/Markdown";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import {
+  useBudgetCategoryOptions,
   useCreateBudgetLine,
   useDeleteBudgetLine,
   useTravelBudget,
   useUpdateBudgetLine,
 } from "@/hooks/use-travel-budget";
 import {
-  BUDGET_CATEGORIES,
+  compareBudgetCategories,
   isVisitItem,
   type BudgetLine,
   type BudgetLineInput,
 } from "@/types/travel-budget";
 import { formatCurrency } from "@/utils/format";
 import { buildMapsUrl } from "@/utils/maps";
+import { mergeOptions } from "@/utils/options";
 import { ActivitiesMap } from "./ActivitiesMap";
 import { BudgetLineModal } from "./BudgetLineModal";
 import budgetStyles from "./BudgetSection.module.css";
@@ -33,6 +35,7 @@ export function ActivitiesSection({
   focusId?: string;
 }) {
   const { data: lines = [], isLoading, isError } = useTravelBudget(travelId);
+  const { options: categoryOptions } = useBudgetCategoryOptions(lines);
   const createLine = useCreateBudgetLine(travelId);
   const updateLine = useUpdateBudgetLine(travelId);
   const deleteLine = useDeleteBudgetLine(travelId);
@@ -44,21 +47,31 @@ export function ActivitiesSection({
 
   const visitLines = useMemo(() => lines.filter(isVisitItem), [lines]);
 
+  // Le filtre ne propose que les catégories réellement présentes ici, alors que la
+  // modale propose toutes celles de la base.
+  const filterCategories = useMemo(
+    () =>
+      mergeOptions(visitLines.map((l) => l.category)).sort(
+        compareBudgetCategories,
+      ),
+    [visitLines],
+  );
+
   const visibleLines = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = visitLines.filter((l) => {
       const matchesCategory =
         selectedCategories.length === 0 ||
-        selectedCategories.includes(l.category);
+        selectedCategories.some(
+          (category) => category.toLowerCase() === l.category.toLowerCase(),
+        );
       const matchesSearch =
         query === "" || l.label.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
 
     return [...filtered].sort((a, b) => {
-      const byCategory =
-        BUDGET_CATEGORIES.indexOf(a.category) -
-        BUDGET_CATEGORIES.indexOf(b.category);
+      const byCategory = compareBudgetCategories(a.category, b.category);
       if (byCategory !== 0) return byCategory;
       return a.label.localeCompare(b.label, "fr");
     });
@@ -129,7 +142,7 @@ export function ActivitiesSection({
               />
             </div>
             <TagFilter
-              tags={[...BUDGET_CATEGORIES]}
+              tags={filterCategories}
               selectedTags={selectedCategories}
               onChange={setSelectedCategories}
             />
@@ -190,6 +203,7 @@ export function ActivitiesSection({
       <BudgetLineModal
         isVisible={isModalVisible}
         initialLine={selectedLine}
+        categoryOptions={categoryOptions}
         createDefaults={{ inBudget: false, toVisit: true }}
         onClose={closeModal}
         onSubmit={handleSubmit}

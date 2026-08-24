@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { MAX_OPTION_LENGTH } from "@/utils/options";
 import styles from "./Tag.module.css";
 
 function joinClasses(...classes: Array<string | false | undefined>) {
@@ -117,6 +119,8 @@ interface TagSelectProps {
   onChange: (tags: string[]) => void;
   disabled?: boolean;
   emptyMessage?: string;
+  /** Rend le champ de création. Le parent normalise et dédoublonne le libellé reçu. */
+  onCreate?: (label: string) => void;
 }
 
 export function TagSelect({
@@ -125,8 +129,11 @@ export function TagSelect({
   onChange,
   disabled = false,
   emptyMessage = "Aucun tag disponible",
+  onCreate,
 }: TagSelectProps) {
-  if (options.length === 0) {
+  const [draft, setDraft] = useState("");
+
+  if (options.length === 0 && !onCreate) {
     return <p className={styles.emptyMessage}>{emptyMessage}</p>;
   }
 
@@ -138,6 +145,12 @@ export function TagSelect({
         ? value.filter((item) => item !== tag)
         : [...value, tag],
     );
+  };
+
+  const submitDraft = () => {
+    if (!onCreate || !draft.trim()) return;
+    onCreate(draft);
+    setDraft("");
   };
 
   return (
@@ -157,6 +170,36 @@ export function TagSelect({
           onClick={() => toggleTag(tag)}
         />
       ))}
+      {onCreate && (
+        <div className={styles.createRow}>
+          <input
+            type="text"
+            className={styles.createInput}
+            value={draft}
+            maxLength={MAX_OPTION_LENGTH}
+            placeholder="Ajouter un tag..."
+            aria-label="Nouveau tag"
+            disabled={disabled}
+            onChange={(event) => setDraft(event.target.value)}
+            // Un tag saisi mais non validé serait perdu à l'enregistrement.
+            onBlur={submitDraft}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              submitDraft();
+            }}
+          />
+          <button
+            type="button"
+            className={styles.createButton}
+            onClick={submitDraft}
+            disabled={disabled || !draft.trim()}
+            aria-label="Ajouter ce tag"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createBudgetLine,
@@ -6,14 +7,38 @@ import {
   getBudgetSummary,
   updateBudgetLine,
 } from "@/services/travel-budget";
-import type {
-  BudgetLine,
-  CreateBudgetLineInput,
-  UpdateBudgetLineInput,
+import {
+  compareBudgetCategories,
+  DEFAULT_BUDGET_CATEGORIES,
+  type BudgetLine,
+  type CreateBudgetLineInput,
+  type UpdateBudgetLineInput,
 } from "@/types/travel-budget";
+import { mergeOptions } from "@/utils/options";
 
 export function travelBudgetQueryKey(travelId: string | undefined) {
   return ["travel-budget", travelId] as const;
+}
+
+/**
+ * Catégories proposées : les catégories par défaut, complétées par toutes celles
+ * déjà utilisées dans la base (le champ Airtable est un texte libre, les lignes
+ * existantes sont donc la seule source des catégories créées).
+ */
+export function useBudgetCategoryOptions(lines: BudgetLine[] = []) {
+  const query = useTravelBudgetTotals();
+
+  const options = useMemo(
+    () =>
+      mergeOptions(
+        DEFAULT_BUDGET_CATEGORIES,
+        query.data?.categories ?? [],
+        lines.map((line) => line.category),
+      ).sort(compareBudgetCategories),
+    [query.data, lines],
+  );
+
+  return { ...query, options };
 }
 
 export function useTravelBudget(travelId: string | undefined) {

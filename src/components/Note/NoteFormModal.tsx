@@ -10,6 +10,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useInvitees, useUserDirectory } from "@/hooks/use-users";
 import { isImageAttachment } from "@/utils/attachments";
+import { mergeOptions, resolveOptionLabel } from "@/utils/options";
 import { uploadImageFiles } from "@/utils/upload-image";
 import styles from "./NoteFormModal.module.css";
 
@@ -61,13 +62,24 @@ function NoteFormModalContent({
     initialNote ? initialNote.attachments.map((a) => a.url) : [],
   );
   const [tags, setTags] = useState<string[]>(() => initialNote?.tags ?? []);
+  /** Tags créés pendant l'édition : proposés tout de suite, réellement créés dans Airtable à l'enregistrement. */
+  const [createdTags, setCreatedTags] = useState<string[]>([]);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (availableTags.length === 0) return;
-    setTags((current) => current.filter((tag) => availableTags.includes(tag)));
-  }, [availableTags]);
+  const tagOptions = mergeOptions(
+    availableTags,
+    initialNote?.tags ?? [],
+    createdTags,
+  );
+
+  const handleCreateTag = (label: string) => {
+    const tag = resolveOptionLabel(tagOptions, label);
+    if (!tag) return;
+
+    if (!tagOptions.includes(tag)) setCreatedTags((prev) => [...prev, tag]);
+    setTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
+  };
 
   useEffect(() => {
     return () => {
@@ -89,9 +101,8 @@ function NoteFormModalContent({
         initialNote.assigneeIds.filter((id) => id !== currentUserId),
       );
       setKeptAttachmentUrls(initialNote.attachments.map((a) => a.url));
-      setTags(
-        initialNote.tags.filter((tag) => availableTags.includes(tag)),
-      );
+      setTags(initialNote.tags);
+      setCreatedTags([]);
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       setPendingImages([]);
       setError(null);
@@ -399,14 +410,14 @@ function NoteFormModalContent({
 
           <FormField
             label="Tags"
-            hint="Sélectionnez parmi les tags configurés dans Airtable"
+            hint="Sélectionnez un tag existant ou créez le vôtre"
           >
             <TagSelect
-              options={availableTags}
+              options={tagOptions}
               value={tags}
               onChange={setTags}
               disabled={isSubmitting}
-              emptyMessage="Aucun tag configuré dans Airtable"
+              onCreate={handleCreateTag}
             />
           </FormField>
 

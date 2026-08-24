@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Modal, ModalActions } from "@/components/ui/Modal";
 import {
-  BUDGET_CATEGORIES,
+  compareBudgetCategories,
+  DEFAULT_BUDGET_CATEGORY,
   DEFAULT_SPEND_LEVEL,
   SPEND_LEVELS,
   type BudgetCategory,
@@ -13,12 +15,20 @@ import {
   type SpendLevel,
 } from "@/types/travel-budget";
 import { parseAmount } from "@/utils/format";
+import {
+  MAX_OPTION_LENGTH,
+  mergeOptions,
+  resolveOptionLabel,
+} from "@/utils/options";
 import { PlaceSearchField } from "./PlaceSearchField";
 import styles from "./BudgetLineModal.module.css";
+
+const NEW_CATEGORY_VALUE = "__new-category__";
 
 interface BudgetLineModalProps {
   isVisible: boolean;
   initialLine?: BudgetLine;
+  categoryOptions?: string[];
   createDefaults?: { inBudget: boolean; toVisit: boolean };
   onClose: () => void;
   onSubmit: (value: BudgetLineInput) => void | Promise<void>;
@@ -29,6 +39,7 @@ interface BudgetLineModalProps {
 
 function BudgetLineModalContent({
   initialLine,
+  categoryOptions = [],
   createDefaults,
   onClose,
   onSubmit,
@@ -38,8 +49,11 @@ function BudgetLineModalContent({
 }: Omit<BudgetLineModalProps, "isVisible">) {
   const isEditing = !!initialLine;
   const [category, setCategory] = useState<BudgetCategory>(
-    initialLine?.category ?? "Transport",
+    initialLine?.category ?? DEFAULT_BUDGET_CATEGORY,
   );
+  /** Catégories créées ici : proposées tout de suite, réellement créées dans Airtable à l'enregistrement. */
+  const [createdCategories, setCreatedCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState<string | null>(null);
   const [label, setLabel] = useState(initialLine?.label ?? "");
   const [spendLevel, setSpendLevel] = useState<SpendLevel>(
     initialLine?.spendLevel ?? DEFAULT_SPEND_LEVEL,
@@ -62,6 +76,31 @@ function BudgetLineModalContent({
   const [error, setError] = useState<string | null>(null);
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
+  const categories = mergeOptions(categoryOptions, createdCategories, [
+    category,
+  ]).sort(compareBudgetCategories);
+  /** Le libellé retenu par mergeOptions, pour que le select ait bien une option sélectionnée. */
+  const selectedCategory = resolveOptionLabel(categories, category);
+
+  const handleCategoryChange = (value: string) => {
+    if (value === NEW_CATEGORY_VALUE) {
+      setNewCategory("");
+      return;
+    }
+    setCategory(value);
+  };
+
+  const confirmNewCategory = () => {
+    const created = resolveOptionLabel(categories, newCategory ?? "");
+    if (!created) return;
+
+    if (!categories.includes(created)) {
+      setCreatedCategories((prev) => [...prev, created]);
+    }
+    setCategory(created);
+    setNewCategory(null);
+  };
+
   const handleSubmit = async () => {
     if (!label.trim()) {
       setError("Veuillez saisir un libellé");
@@ -78,10 +117,16 @@ function BudgetLineModalContent({
       return;
     }
 
+    // Une catégorie saisie mais non validée serait perdue : on la retient quand même.
+    const submittedCategory =
+      newCategory === null
+        ? selectedCategory
+        : resolveOptionLabel(categories, newCategory) || selectedCategory;
+
     try {
       setError(null);
       await onSubmit({
-        category,
+        category: submittedCategory,
         label: label.trim(),
         estimated: estimatedValue,
         actual: actualValue,
@@ -141,18 +186,54 @@ function BudgetLineModalContent({
         }
       >
         <FormField label="Catégorie" htmlFor="budget-category">
-          <select
-            id="budget-category"
-            className={styles.select}
-            value={category}
-            onChange={(e) => setCategory(e.target.value as BudgetCategory)}
-          >
-            {BUDGET_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          {newCategory === null ? (
+            <select
+              id="budget-category"
+              className={styles.select}
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+              <option value={NEW_CATEGORY_VALUE}>+ Nouvelle catégorie...</option>
+            </select>
+          ) : (
+            <div className={styles.newCategoryRow}>
+              <Input
+                id="budget-category"
+                autoFocus
+                value={newCategory}
+                maxLength={MAX_OPTION_LENGTH}
+                placeholder="Nom de la catégorie"
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    confirmNewCategory();
+                  }
+                  if (e.key === "Escape") {
+                    // Sinon la Modal, qui écoute Escape sur window, se fermerait
+                    // et ferait perdre tout le formulaire.
+                    e.stopPropagation();
+                    setNewCategory(null);
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={confirmNewCategory}
+                disabled={!newCategory.trim()}
+              >
+                Valider
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setNewCategory(null)}>
+                Annuler
+              </Button>
+            </div>
+          )}
         </FormField>
 
         <FormField

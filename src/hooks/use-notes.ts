@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getNoteTagOptions } from "@/services/airtable-meta";
 import {
@@ -7,6 +8,7 @@ import {
   updateNote,
 } from "@/services/notes";
 import type { CreateNoteInput, Note, UpdateNoteInput } from "@/types/notes";
+import { mergeOptions } from "@/utils/options";
 import { collectUniqueTags } from "@/utils/tags";
 
 export function notesQueryKey(userEmail: string | undefined) {
@@ -24,10 +26,15 @@ export function useNoteTagOptions(notes: Note[] = []) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const options =
-    query.data && query.data.length > 0
-      ? query.data
-      : collectUniqueTags(notes);
+  // Les tags déjà posés sur les notes complètent les options Airtable : un tag
+  // tout juste créé reste visible même si le cache des options n'a pas suivi.
+  const options = useMemo(
+    () =>
+      mergeOptions(query.data ?? [], collectUniqueTags(notes)).sort((a, b) =>
+        a.localeCompare(b, "fr"),
+      ),
+    [query.data, notes],
+  );
 
   return { ...query, options };
 }
@@ -55,6 +62,7 @@ export function useCreateNote(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: notesQueryKey(userEmail) });
+      void queryClient.invalidateQueries({ queryKey: noteTagOptionsQueryKey() });
     },
   });
 }
@@ -74,6 +82,7 @@ export function useUpdateNote(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: notesQueryKey(userEmail) });
+      void queryClient.invalidateQueries({ queryKey: noteTagOptionsQueryKey() });
     },
   });
 }
