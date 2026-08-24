@@ -28,7 +28,8 @@ const NAV_SETTINGS = [
 
 export function ProfilPage() {
   const { user, logout } = useAuth();
-  const { preferences, isLoading, saveError, setFeatureEnabled } = useNavigationPreferences();
+  const { preferences, isLoading, loadError, saveError, setFeatureEnabled } =
+    useNavigationPreferences();
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,7 +79,9 @@ export function ProfilPage() {
                       type="checkbox"
                       className={styles.switchInput}
                       checked={preferences[feature]}
-                      disabled={isLoading}
+                      // Lecture échouée : les valeurs affichées ne sont pas
+                      // celles enregistrées, les modifier les écraserait.
+                      disabled={isLoading || loadError !== null}
                       onChange={(event) =>
                         setFeatureEnabled(feature, event.target.checked)
                       }
@@ -88,6 +91,12 @@ export function ProfilPage() {
                 </li>
               ))}
             </ul>
+            {loadError && (
+              <p className={styles.error}>
+                Préférences illisibles pour le moment ({loadError}). Réessayez
+                en rechargeant la page.
+              </p>
+            )}
             {saveError && <p className={styles.error}>{saveError}</p>}
           </section>
         </Card>

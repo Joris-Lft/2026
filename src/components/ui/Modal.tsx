@@ -23,6 +23,9 @@ function joinClasses(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+/** Modales ouvertes, de la plus ancienne à la plus récente. */
+const openModals: object[] = [];
+
 export function Modal({
   open,
   onClose,
@@ -42,12 +45,21 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const token = {};
+    openModals.push(token);
+
+    // Seule la modale la plus haute réagit à Échap : sans ça, une confirmation
+    // ouverte par-dessus un formulaire ferme les deux d'un coup.
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      if (openModals.at(-1) !== token) return;
+      onClose();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      const index = openModals.indexOf(token);
+      if (index !== -1) openModals.splice(index, 1);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };

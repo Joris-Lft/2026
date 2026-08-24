@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -68,15 +69,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute("data-theme", currentTheme);
   }, [currentTheme]);
 
-  const setThemeMode = (mode: ThemeMode) => {
+  const setThemeMode = useCallback((mode: ThemeMode) => {
     setThemeModeState(mode);
     void storage.setItem(THEME_STORAGE_KEY, mode);
-  };
+  }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const newTheme: ThemeMode = currentTheme === "light" ? "dark" : "light";
     setThemeMode(newTheme);
-  };
+  }, [currentTheme, setThemeMode]);
 
   const value = useMemo(
     () => ({
@@ -86,7 +87,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       isLoading,
       setThemeMode,
     }),
-    [themeMode, currentTheme, isLoading],
+    [themeMode, currentTheme, isLoading, toggleTheme, setThemeMode],
   );
 
   return (

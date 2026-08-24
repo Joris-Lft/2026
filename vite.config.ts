@@ -1,6 +1,6 @@
 import { copyFileSync } from "node:fs";
 import path from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 const repositoryName = "2026";
@@ -25,5 +25,10 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  test: {
+    // Les fonctions testées sont pures : pas besoin de DOM, donc pas de jsdom.
+    environment: "node",
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 }));

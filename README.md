@@ -29,9 +29,16 @@ npm run dev
 | Commande | Description |
 |----------|-------------|
 | `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
+| `npm run build` | Build de production (types + bundle) |
 | `npm run preview` | Prévisualiser le build |
+| `npm test` | Tests unitaires (Vitest) |
+| `npm run test:watch` | Tests en mode watch |
 | `npm run create-user` | Créer un utilisateur via CLI |
+
+Les tests couvrent les utilitaires purs (`src/utils/`) : dérivation de titre,
+wikilinks, graphe de notes, tags et formatage. Ils tournent en environnement
+Node — aucun DOM, aucun accès Airtable, aucun secret requis. La CI
+(`.github/workflows/ci.yml`) les rejoue sur chaque PR vers `main`.
 
 ## Structure
 

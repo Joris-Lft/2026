@@ -24,6 +24,79 @@
   gap: 16px;
 }
 
+.noteNumber {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.backRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  padding: 4px 8px 4px 4px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-tint-soft);
+  color: var(--color-tint);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backlinks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.backlinksTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.backlinksList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.backlinkItem {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.backlinkItem:hover,
+.backlinkItem:focus-visible {
+  border-color: color-mix(in srgb, var(--color-tint) 35%, var(--color-border));
+  background: var(--color-tint-soft);
+}
+
 .readMeta {
   font-size: 0.85rem;
   color: var(--color-text-muted);

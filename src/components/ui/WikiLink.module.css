@@ -1,0 +1,44 @@
+.link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-tint);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+
+button.link {
+  cursor: pointer;
+}
+
+button.link:hover,
+button.link:focus-visible {
+  background: var(--color-tint-soft);
+  border-radius: 3px;
+}
+
+/* Plusieurs notes portent ce titre : la plus ancienne est ouverte. */
+.ambiguous {
+  text-decoration-style: double;
+}
+
+/* Un lien sans cible est normal dans un wiki : pas une erreur, donc pas de rouge. */
+.broken {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+/* Lien vers la note elle-même. */
+.self {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-weight: 600;
+}

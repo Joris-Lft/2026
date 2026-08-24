@@ -22,8 +22,22 @@ import { DEFAULT_NAVIGATION_PREFERENCES } from "@/types/navigation-preferences";
 interface NavigationPreferencesContextType {
   preferences: NavigationPreferences;
   isLoading: boolean;
+  /** Les préférences n'ont pas pu être lues : ne pas proposer de les modifier. */
+  loadError: string | null;
   saveError: string | null;
   setFeatureEnabled: (feature: NavFeature, enabled: boolean) => void;
+}
+
+/** Préférences chargées, associées à l'utilisateur pour lequel elles valent. */
+interface LoadedPreferences {
+  userId: string;
+  preferences: NavigationPreferences;
+}
+
+/** Message d'erreur, rattaché à l'utilisateur concerné. */
+interface ScopedError {
+  userId: string;
+  message: string;
 }
 
 const NavigationPreferencesContext = createContext<
@@ -36,33 +50,50 @@ export function NavigationPreferencesProvider({
   children: ReactNode;
 }) {
   const { user } = useAuth();
-  const [preferences, setPreferences] = useState<NavigationPreferences>(
-    DEFAULT_NAVIGATION_PREFERENCES,
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const userId = user?.id;
+
+  const [loaded, setLoaded] = useState<LoadedPreferences | null>(null);
+  const [loadFailure, setLoadFailure] = useState<ScopedError | null>(null);
+  const [saveFailure, setSaveFailure] = useState<ScopedError | null>(null);
+
+  // Dérivés plutôt que stockés : à la déconnexion ou au changement de compte,
+  // on retombe sur les valeurs par défaut sans réinitialiser d'état dans un
+  // effet — et sans jamais exposer les préférences, ni les erreurs, de
+  // l'utilisateur précédent.
+  const isCurrent = loaded !== null && loaded.userId === userId;
+  const preferences = isCurrent
+    ? loaded.preferences
+    : DEFAULT_NAVIGATION_PREFERENCES;
+  const loadError =
+    loadFailure !== null && loadFailure.userId === userId
+      ? loadFailure.message
+      : null;
+  const saveError =
+    saveFailure !== null && saveFailure.userId === userId
+      ? saveFailure.message
+      : null;
+  // Un échec de lecture met fin au chargement : sinon FeatureRoute
+  // n'afficherait plus jamais aucune page.
+  const isLoading = !!userId && !isCurrent && loadError === null;
 
   useEffect(() => {
-    if (!user?.id) {
-      setPreferences(DEFAULT_NAVIGATION_PREFERENCES);
-      setIsLoading(false);
-      return;
-    }
+    if (!userId) return;
 
     let cancelled = false;
-    setIsLoading(true);
 
     void (async () => {
       try {
-        const saved = await fetchNavigationPreferences(user.id);
+        const saved = await fetchNavigationPreferences(userId);
         if (!cancelled) {
-          setPreferences(saved);
+          setLoadFailure(null);
+          setLoaded({ userId, preferences: saved });
         }
       } catch (error) {
         console.error("Fetch navigation preferences error:", error);
-      } finally {
+        // On ne fabrique pas de préférences par défaut : les valeurs affichées
+        // seraient fausses, et les enregistrer écraserait les vraies.
         if (!cancelled) {
-          setIsLoading(false);
+          setLoadFailure({ userId, message: getAirtableErrorMessage(error) });
         }
       }
     })();
@@ -70,40 +101,52 @@ export function NavigationPreferencesProvider({
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [userId]);
 
   const setFeatureEnabled = useCallback(
     (feature: NavFeature, enabled: boolean) => {
-      if (!user?.id) {
-        return;
-      }
+      // Sans lecture réussie, on ignore l'état réel des autres préférences :
+      // écrire maintenant reviendrait à deviner.
+      if (!userId || !isCurrent) return;
 
-      setSaveError(null);
+      const previous = preferences;
 
-      setPreferences((current) => {
-        const previous = current;
-        const next = { ...current, [feature]: enabled };
+      setSaveFailure(null);
+      setLoaded({ userId, preferences: { ...previous, [feature]: enabled } });
 
-        void updateNavigationPreferences(user.id, next).catch((error) => {
-          console.error("Update navigation preferences error:", error);
-          setPreferences(previous);
-          setSaveError(getAirtableErrorMessage(error));
-        });
+      // Mise à jour optimiste, limitée au champ modifié.
+      void updateNavigationPreferences(userId, { [feature]: enabled }).catch((error) => {
+        console.error("Update navigation preferences error:", error);
 
-        return next;
+        // Deux gardes : ne rien restaurer si l'utilisateur a changé entre-temps
+        // (sinon l'état resterait bloqué en chargement), et ne rejouer que le
+        // champ concerné pour ne pas annuler une bascule ultérieure réussie.
+        setLoaded((current) =>
+          current?.userId === userId
+            ? {
+                userId,
+                preferences: {
+                  ...current.preferences,
+                  [feature]: previous[feature],
+                },
+              }
+            : current,
+        );
+        setSaveFailure({ userId, message: getAirtableErrorMessage(error) });
       });
     },
-    [user?.id],
+    [isCurrent, preferences, userId],
   );
 
   const value = useMemo(
     () => ({
       preferences,
       isLoading,
+      loadError,
       saveError,
       setFeatureEnabled,
     }),
-    [preferences, isLoading, saveError, setFeatureEnabled],
+    [preferences, isLoading, loadError, saveError, setFeatureEnabled],
   );
 
   return (
