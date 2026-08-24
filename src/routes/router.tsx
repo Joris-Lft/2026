@@ -6,8 +6,11 @@ import { LoginPage } from "@/pages/LoginPage";
 import { MeasurePage } from "@/pages/MeasurePage";
 import { NotesPage } from "@/pages/NotesPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { CagnottePage } from "@/pages/CagnottePage";
 import { ProfilPage } from "@/pages/ProfilPage";
 import { SignupPage } from "@/pages/SignupPage";
+import { VoyageDetailPage } from "@/pages/VoyageDetailPage";
+import { VoyagesPage } from "@/pages/VoyagesPage";
 import { DefaultRedirect } from "@/routes/DefaultRedirect";
 import { FeatureRoute } from "@/routes/FeatureRoute";
 import { GuestRoute, ProtectedRoute } from "@/routes/RouteGuards";
@@ -51,6 +54,17 @@ export const router = createBrowserRouter(
             ),
           },
           { path: "notes", element: <NotesPage />, handle: { title: "Notes" } },
+          { path: "voyages", element: <VoyagesPage />, handle: { title: "Projets" } },
+          {
+            path: "voyages/cagnotte",
+            element: <CagnottePage />,
+            handle: { title: "Cagnotte" },
+          },
+          {
+            path: "voyages/:travelId",
+            element: <VoyageDetailPage />,
+            handle: { title: "Projet" },
+          },
           { path: "profil", element: <ProfilPage />, handle: { title: "Profil" } },
         ],
       },

@@ -1,0 +1,90 @@
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Étiquettes dans leur propre bande au-dessus de la frise. Chacune est calée à
+   droite sur son palier, donc au-dessus du segment que ce palier vient fermer. */
+.annotations {
+  position: relative;
+  height: 14px;
+}
+
+.annotation {
+  position: absolute;
+  bottom: 0;
+  white-space: nowrap;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  opacity: 0.45;
+}
+
+.progressTrack {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-tint-soft);
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-tint);
+  transition: width 0.3s ease;
+}
+
+.progressBar.progressFunded {
+  background: var(--chart-bust);
+}
+
+/* Paliers cumulés (strict minimum, confortable, royal) : la couleur du niveau
+   habille à la fois le trait sur la frise et son annotation. */
+.checkpointMin {
+  color: var(--chart-bust);
+}
+
+.checkpointComfort {
+  color: var(--chart-arm);
+}
+
+.checkpointRoyal {
+  color: var(--chart-hip);
+}
+
+.checkpoint {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+  background: currentColor;
+  box-shadow: 0 0 0 1px var(--color-surface);
+  opacity: 0.45;
+}
+
+/* Doit rester après .checkpoint et .annotation pour l'emporter. */
+.checkpointReached {
+  opacity: 1;
+}
+
+.budgetAmounts {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.saved {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.estimated {
+  color: var(--color-text-muted);
+}

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  FolderHeart,
   NotebookPen,
   Ruler,
   UserCircle,
@@ -18,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/habits", label: "Habits", icon: BarChart3, feature: "habits" },
   { to: "/measures", label: "Mensurations", icon: Ruler, feature: "measures" },
   { to: "/notes", label: "Notes", icon: NotebookPen },
+  { to: "/voyages", label: "Projets", icon: FolderHeart },
   { to: "/profil", label: "Profil", icon: UserCircle },
 ];
 
