@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_PASSWORD_FIELD: string;
   readonly VITE_AIRTABLE_SHOW_HABITS_FIELD: string;
   readonly VITE_AIRTABLE_SHOW_MEASURES_FIELD: string;
+  readonly VITE_AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_TABLE_NAME: string;
   readonly VITE_AIRTABLE_HABITS_USER_ID_FIELD: string;
   readonly VITE_AIRTABLE_HABITS_NAME_FIELD: string;
@@ -47,6 +48,7 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_TRAVELS_END_DATE_FIELD: string;
   readonly VITE_AIRTABLE_TRAVELS_DESCRIPTION_FIELD: string;
   readonly VITE_AIRTABLE_TRAVELS_IS_VOYAGE_FIELD: string;
+  readonly VITE_AIRTABLE_TRAVELS_IS_PERSONAL_FIELD: string;
   readonly VITE_AIRTABLE_TRAVEL_BUDGET_TABLE_NAME: string;
   readonly VITE_AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD: string;
   readonly VITE_AIRTABLE_TRAVEL_BUDGET_CATEGORY_FIELD: string;
@@ -64,6 +66,7 @@ interface ImportMetaEnv {
   readonly VITE_AIRTABLE_TRAVEL_SAVINGS_AUTHOR_FIELD: string;
   readonly VITE_AIRTABLE_TRAVEL_SAVINGS_DATE_FIELD: string;
   readonly VITE_AIRTABLE_TRAVEL_SAVINGS_NOTE_FIELD: string;
+  readonly VITE_AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD: string;
   readonly VITE_PASSWORD_SALT: string;
   readonly VITE_IMGBB_API_KEY?: string;
   readonly VITE_RESET_TOKEN_SECRET: string;

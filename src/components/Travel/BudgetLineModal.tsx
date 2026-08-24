@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -134,6 +133,10 @@ function BudgetLineModalContent({
             onSubmit={() => void handleSubmit()}
             loading={isSubmitting}
             submitDisabled={isSubmitting || isDeleting}
+            onDelete={
+              isEditing && onDelete ? () => setIsConfirmVisible(true) : undefined
+            }
+            deleteLoading={isDeleting}
           />
         }
       >
@@ -218,7 +221,11 @@ function BudgetLineModalContent({
           <PlaceSearchField value={location} onChange={setLocation} />
         </FormField>
 
-        <FormField label="Notes" htmlFor="budget-notes" hint="Optionnel">
+        <FormField
+          label="Notes"
+          htmlFor="budget-notes"
+          hint="Optionnel — Markdown supporté (titres, listes, tableaux…)"
+        >
           <Textarea
             id="budget-notes"
             placeholder="Infos utiles, réservation, remarques..."
@@ -255,19 +262,6 @@ function BudgetLineModalContent({
           </label>
         </div>
 
-        {isEditing && onDelete && (
-          <div className={styles.deleteSection}>
-            <Button
-              variant="danger"
-              fullWidth
-              onClick={() => setIsConfirmVisible(true)}
-              disabled={isSubmitting || isDeleting}
-              loading={isDeleting}
-            >
-              Supprimer l'activité
-            </Button>
-          </div>
-        )}
       </Modal>
 
       {isEditing && onDelete && (

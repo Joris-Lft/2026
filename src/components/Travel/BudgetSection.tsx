@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
+import { Markdown } from "@/components/ui/Markdown";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import {
   useCreateBudgetLine,
@@ -228,7 +229,11 @@ function BudgetLineRow({
             )}
             <span className={styles.lineLabel}>{line.label}</span>
           </span>
-          {line.notes && <span className={styles.lineNotes}>{line.notes}</span>}
+          {line.notes && (
+            <Markdown compact className={styles.lineNotes}>
+              {line.notes}
+            </Markdown>
+          )}
         </span>
         <span className={styles.lineAmounts}>
           {line.actual != null && (

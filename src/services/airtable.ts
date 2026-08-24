@@ -4,6 +4,7 @@ import {
   AIRTABLE_PASSWORD_FIELD,
   AIRTABLE_SHOW_HABITS_FIELD,
   AIRTABLE_SHOW_MEASURES_FIELD,
+  AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD,
 } from "./airtable-config";
 import { usersTable } from "./airtable-client";
 import {
@@ -135,6 +136,7 @@ export async function createUser(
       [AIRTABLE_PASSWORD_FIELD]: passwordHash,
       [AIRTABLE_SHOW_HABITS_FIELD]: true,
       [AIRTABLE_SHOW_MEASURES_FIELD]: true,
+      [AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD]: true,
     };
 
     Object.assign(fields, additionalFields);

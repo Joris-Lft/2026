@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import {
+  isPersonalScope,
+  PROJECT_SCOPES,
+  type ProjectScope,
+} from "@/constants/project-scope";
 import { useAuth } from "@/contexts/auth-context";
 import {
   useAvailableSavings,
@@ -18,18 +23,26 @@ import type { Deposit, DepositFormValue } from "@/types/travel-savings";
 import { formatCurrency, formatDate } from "@/utils/format";
 import styles from "./CagnottePage.module.css";
 
-export function CagnottePage() {
+type CagnottePageProps = {
+  scope: ProjectScope;
+};
+
+export function CagnottePage({ scope }: CagnottePageProps) {
+  const { basePath, listTitle, savingsLabel } = PROJECT_SCOPES[scope];
   const { user } = useAuth();
-  const { data: deposits = [], isLoading, isError } = useDeposits();
-  const { total, spent, available } = useAvailableSavings();
-  const createDeposit = useCreateDeposit();
-  const updateDeposit = useUpdateDeposit();
-  const deleteDeposit = useDeleteDeposit();
+  const { data: deposits = [], isLoading, isError } = useDeposits(scope);
+  const { total, spent, available } = useAvailableSavings(scope);
+  const createDeposit = useCreateDeposit(scope);
+  const updateDeposit = useUpdateDeposit(scope);
+  const deleteDeposit = useDeleteDeposit(scope);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selected, setSelected] = useState<Deposit | undefined>();
 
   const authorName = (user?.Name as string) || user?.email || "";
+  // Un versement perso porte l'email de son propriétaire ; la cagnotte commune
+  // se reconnaît à un user_id vide.
+  const userId = isPersonalScope(scope) ? (user?.email ?? "") : "";
 
   const openCreate = () => {
     setSelected(undefined);
@@ -51,10 +64,11 @@ export function CagnottePage() {
       await updateDeposit.mutateAsync({
         ...value,
         author: selected.author,
+        userId: selected.userId,
         id: selected.id,
       });
     } else {
-      await createDeposit.mutateAsync({ ...value, author: authorName });
+      await createDeposit.mutateAsync({ ...value, author: authorName, userId });
     }
     closeModal();
   };
@@ -67,14 +81,14 @@ export function CagnottePage() {
 
   return (
     <PageShell>
-      <Link to="/voyages" className={styles.back}>
+      <Link to={basePath} className={styles.back}>
         <ArrowLeft size={18} />
-        <span>Projets</span>
+        <span>{listTitle}</span>
       </Link>
 
       <div className={styles.content}>
         <Card padded className={styles.summary}>
-          <span className={styles.summaryLabel}>Cagnotte commune</span>
+          <span className={styles.summaryLabel}>{savingsLabel}</span>
           <span className={styles.summaryTotal}>{formatCurrency(available)}</span>
           {spent > 0 && (
             <span className={styles.summaryBreakdown}>

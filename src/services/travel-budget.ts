@@ -100,14 +100,14 @@ export async function getBudgetForTravel(
 export type BudgetSummary = {
   /** Reste à payer par voyage (items non achetés), détaillé par niveau de dépense. */
   totalsByTravel: Record<string, TravelBudgetTotals>;
-  /** Total dépensé sur la cagnotte commune : réel payé (ou estimé) des items achetés, tous projets confondus. */
-  purchasedSpend: number;
+  /** Dépensé par projet : réel payé (ou estimé) des items achetés. Ventilé par projet pour que chaque cagnotte (commune ou perso) ne soit débitée que par ses propres projets. */
+  purchasedSpendByTravel: Record<string, number>;
 };
 
 /**
  * Synthèse budgétaire en une seule requête (pour la liste des projets et le
- * solde de la cagnotte) : le reste à payer par projet (items non achetés) et le
- * total déjà dépensé sur la cagnotte (items achetés).
+ * solde des cagnottes) : le reste à payer par projet (items non achetés) et le
+ * déjà dépensé par projet (items achetés).
  */
 export async function getBudgetSummary(): Promise<BudgetSummary> {
   const records = await travelBudgetTable
@@ -123,9 +123,12 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
     .all();
 
   const totalsByTravel: Record<string, TravelBudgetTotals> = {};
-  let purchasedSpend = 0;
+  const purchasedSpendByTravel: Record<string, number> = {};
 
   for (const record of records) {
+    const travelId = record.fields[AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD];
+    if (typeof travelId !== "string") continue;
+
     const estimated = mapNumber(
       record.fields[AIRTABLE_TRAVEL_BUDGET_ESTIMATED_FIELD],
     );
@@ -133,12 +136,14 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
     if (record.fields[AIRTABLE_TRAVEL_BUDGET_PURCHASED_FIELD] === true) {
       const actual = mapNumber(record.fields[AIRTABLE_TRAVEL_BUDGET_ACTUAL_FIELD]);
       const spent = actual ?? estimated;
-      if (spent != null) purchasedSpend += spent;
+      if (spent != null) {
+        purchasedSpendByTravel[travelId] =
+          (purchasedSpendByTravel[travelId] ?? 0) + spent;
+      }
       continue;
     }
 
-    const travelId = record.fields[AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD];
-    if (typeof travelId !== "string" || estimated == null) continue;
+    if (estimated == null) continue;
 
     const rawLevel = record.fields[AIRTABLE_TRAVEL_BUDGET_SPEND_LEVEL_FIELD];
     const level = isSpendLevel(rawLevel) ? rawLevel : DEFAULT_SPEND_LEVEL;
@@ -148,7 +153,7 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
     entry.byLevel[level] += estimated;
   }
 
-  return { totalsByTravel, purchasedSpend };
+  return { totalsByTravel, purchasedSpendByTravel };
 }
 
 export async function createBudgetLine(
@@ -196,6 +201,23 @@ export async function updateBudgetLine(
           ? error.message
           : "Erreur lors de la mise à jour de la ligne",
     };
+  }
+}
+
+/** Supprime toutes les lignes d'un projet (budget et activités), par lots de 10 (limite Airtable). */
+export async function deleteBudgetLinesForTravel(
+  travelId: string,
+): Promise<void> {
+  const records = await travelBudgetTable
+    .select({
+      filterByFormula: buildTravelFilter(travelId),
+      fields: [AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD],
+    })
+    .all();
+
+  const ids = records.map((record) => record.id);
+  for (let index = 0; index < ids.length; index += 10) {
+    await travelBudgetTable.destroy(ids.slice(index, index + 10));
   }
 }
 

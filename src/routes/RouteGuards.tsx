@@ -1,4 +1,5 @@
 import { Navigate, Outlet } from "react-router";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import styles from "./RouteGuards.module.css";
@@ -24,7 +25,7 @@ export function GuestRoute() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
-  if (isAuthenticated) return <Navigate to="/habits" replace />;
+  if (isAuthenticated) return <Navigate to={HOME_ROUTE} replace />;
 
   return <Outlet />;
 }

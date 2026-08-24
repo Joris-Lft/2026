@@ -1,3 +1,4 @@
+import type { ProjectScope } from "@/constants/project-scope";
 import type {
   CreateDepositInput,
   Deposit,
@@ -9,6 +10,7 @@ import {
   AIRTABLE_TRAVEL_SAVINGS_AUTHOR_FIELD,
   AIRTABLE_TRAVEL_SAVINGS_DATE_FIELD,
   AIRTABLE_TRAVEL_SAVINGS_NOTE_FIELD,
+  AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD,
 } from "./airtable-config";
 
 function mapNumber(value: unknown): number {
@@ -28,6 +30,7 @@ function mapRecordToDeposit(record: {
     id: record.id,
     amount: mapNumber(record.fields[AIRTABLE_TRAVEL_SAVINGS_AMOUNT_FIELD]),
     author: String(record.fields[AIRTABLE_TRAVEL_SAVINGS_AUTHOR_FIELD] ?? ""),
+    userId: String(record.fields[AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD] ?? ""),
     date: String(record.fields[AIRTABLE_TRAVEL_SAVINGS_DATE_FIELD] ?? ""),
     note: String(record.fields[AIRTABLE_TRAVEL_SAVINGS_NOTE_FIELD] ?? ""),
   };
@@ -45,14 +48,33 @@ function buildFields(
   return {
     [AIRTABLE_TRAVEL_SAVINGS_AMOUNT_FIELD]: input.amount,
     [AIRTABLE_TRAVEL_SAVINGS_AUTHOR_FIELD]: input.author,
+    [AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD]: input.userId,
     [AIRTABLE_TRAVEL_SAVINGS_DATE_FIELD]: input.date || null,
     [AIRTABLE_TRAVEL_SAVINGS_NOTE_FIELD]: input.note.trim(),
   };
 }
 
-/** Cagnotte commune : tous les versements sont partagés (pas de filtre utilisateur). */
-export async function getDeposits(): Promise<Deposit[]> {
-  const records = await travelSavingsTable.select().all();
+function buildScopeFilter(scope: ProjectScope, userEmail: string): string {
+  if (scope === "personal") {
+    return `{${AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD}} = "${userEmail}"`;
+  }
+  return `{${AIRTABLE_TRAVEL_SAVINGS_USER_ID_FIELD}} = ""`;
+}
+
+/**
+ * Cagnotte commune : versements sans user_id, partagés entre tous (dont tout
+ * l'historique antérieur aux cagnottes perso). Cagnotte perso : versements
+ * portant l'email de leur propriétaire.
+ */
+export async function getDeposits(
+  scope: ProjectScope,
+  userEmail: string | undefined,
+): Promise<Deposit[]> {
+  if (scope === "personal" && !userEmail) return [];
+
+  const records = await travelSavingsTable
+    .select({ filterByFormula: buildScopeFilter(scope, userEmail ?? "") })
+    .all();
   const deposits = records
     .map(mapRecordToDeposit)
     // Ignore les lignes vides (dont les 3 lignes par défaut d'Airtable)

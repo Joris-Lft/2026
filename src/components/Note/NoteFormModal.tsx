@@ -266,6 +266,12 @@ function NoteFormModalContent({
             onSubmit={() => void handleSubmit()}
             loading={isSubmitting}
             submitDisabled={isSubmitting || isDeleting}
+            onDelete={
+              isExistingNote && onDelete
+                ? () => setIsDeleteModalVisible(true)
+                : undefined
+            }
+            deleteLoading={isDeleting}
           />
         )
       }
@@ -438,20 +444,6 @@ function NoteFormModalContent({
               </ul>
             )}
           </FormField>
-
-          {isExistingNote && onDelete && (
-            <div className={styles.deleteSection}>
-              <Button
-                variant="danger"
-                fullWidth
-                onClick={() => setIsDeleteModalVisible(true)}
-                disabled={isSubmitting || isDeleting}
-                loading={isDeleting}
-              >
-                Supprimer la note
-              </Button>
-            </div>
-          )}
         </>
       )}
     </Modal>

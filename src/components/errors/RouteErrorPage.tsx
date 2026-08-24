@@ -1,13 +1,14 @@
 import { isRouteErrorResponse, useRouteError } from "react-router";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { ErrorFallback } from "./ErrorFallback";
 
 export function RouteErrorPage() {
   const error = useRouteError();
   const { isAuthenticated } = useAuth();
-  const homeTo = isAuthenticated ? "/habits" : "/login";
+  const homeTo = isAuthenticated ? HOME_ROUTE : "/login";
   const homeLabel = isAuthenticated
-    ? "Retour aux habits"
+    ? "Retour aux notes"
     : "Retour à la connexion";
 
   if (isRouteErrorResponse(error)) {

@@ -115,6 +115,10 @@ interface ModalActionsProps {
   loading?: boolean;
   submitDisabled?: boolean;
   submitVariant?: "primary" | "danger";
+  /** Action destructive optionnelle, isolée à gauche du footer pour l'éloigner du bouton de validation. */
+  onDelete?: () => void;
+  deleteLabel?: string;
+  deleteLoading?: boolean;
 }
 
 export function ModalActions({
@@ -126,9 +130,23 @@ export function ModalActions({
   loading = false,
   submitDisabled = false,
   submitVariant = "primary",
+  onDelete,
+  deleteLabel = "Supprimer",
+  deleteLoading = false,
 }: ModalActionsProps) {
   return (
     <>
+      {onDelete && (
+        <Button
+          variant="danger"
+          className={styles.deleteAction}
+          onClick={onDelete}
+          loading={deleteLoading}
+          disabled={loading}
+        >
+          {deleteLabel}
+        </Button>
+      )}
       <Button variant="secondary" fullWidth onClick={onCancel} disabled={loading}>
         {cancelLabel}
       </Button>

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { PageShell } from "@/components/ui/PageShell";
+import { HOME_ROUTE } from "@/constants/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import styles from "./AuthPage.module.css";
 
@@ -30,7 +31,7 @@ export function LoginPage() {
     setIsLoading(false);
 
     if (result.success) {
-      navigate("/habits", { replace: true });
+      navigate(HOME_ROUTE, { replace: true });
     } else {
       setError(result.error || "Une erreur est survenue");
     }

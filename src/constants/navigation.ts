@@ -2,10 +2,12 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   FolderHeart,
+  FolderLock,
   NotebookPen,
   Ruler,
   UserCircle,
 } from "lucide-react";
+import { PROJECT_SCOPES } from "@/constants/project-scope";
 import type { NavFeature, NavigationPreferences } from "@/types/navigation-preferences";
 
 export type NavItem = {
@@ -15,11 +17,24 @@ export type NavItem = {
   feature?: NavFeature;
 };
 
+/**
+ * Destination par défaut d'un utilisateur connecté sans page précise
+ * (connexion, route index, feature désactivée, page d'erreur). Notes n'a pas de
+ * feature flag : la route est toujours visible.
+ */
+export const HOME_ROUTE = "/notes";
+
 export const NAV_ITEMS: NavItem[] = [
   { to: "/habits", label: "Habits", icon: BarChart3, feature: "habits" },
   { to: "/measures", label: "Mensurations", icon: Ruler, feature: "measures" },
   { to: "/notes", label: "Notes", icon: NotebookPen },
-  { to: "/voyages", label: "Projets", icon: FolderHeart },
+  { to: PROJECT_SCOPES.shared.basePath, label: "Communs", icon: FolderHeart },
+  {
+    to: PROJECT_SCOPES.personal.basePath,
+    label: "Perso",
+    icon: FolderLock,
+    feature: "personalProjects",
+  },
   { to: "/profil", label: "Profil", icon: UserCircle },
 ];
 
@@ -37,10 +52,4 @@ export function getVisibleNavItems(
   preferences: NavigationPreferences,
 ): NavItem[] {
   return NAV_ITEMS.filter((item) => isNavItemVisible(item, preferences));
-}
-
-export function getDefaultNavRoute(
-  preferences: NavigationPreferences,
-): string {
-  return getVisibleNavItems(preferences)[0]?.to ?? "/profil";
 }

@@ -1,6 +1,7 @@
 import {
   AIRTABLE_SHOW_HABITS_FIELD,
   AIRTABLE_SHOW_MEASURES_FIELD,
+  AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD,
 } from "./airtable-config";
 import { usersTable } from "./airtable-client";
 import type { NavigationPreferences } from "@/types/navigation-preferences";
@@ -15,6 +16,7 @@ export function parseNavigationPreferences(
   return {
     habits: parseCheckbox(fields[AIRTABLE_SHOW_HABITS_FIELD]),
     measures: parseCheckbox(fields[AIRTABLE_SHOW_MEASURES_FIELD]),
+    personalProjects: parseCheckbox(fields[AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD]),
   };
 }
 
@@ -32,6 +34,7 @@ export async function updateNavigationPreferences(
   await usersTable.update(userId, {
     [AIRTABLE_SHOW_HABITS_FIELD]: preferences.habits,
     [AIRTABLE_SHOW_MEASURES_FIELD]: preferences.measures,
+    [AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD]: preferences.personalProjects,
   });
 }
 
