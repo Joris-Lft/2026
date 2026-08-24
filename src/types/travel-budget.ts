@@ -1,4 +1,8 @@
-export const BUDGET_CATEGORIES = [
+/**
+ * Catégories proposées par défaut. La liste n'est pas fermée : l'utilisateur peut
+ * créer les siennes, qui sont alors ajoutées au select Airtable.
+ */
+export const DEFAULT_BUDGET_CATEGORIES = [
   "Transport",
   "Logement",
   "Nourriture",
@@ -6,13 +10,23 @@ export const BUDGET_CATEGORIES = [
   "Autre",
 ] as const;
 
-export type BudgetCategory = (typeof BUDGET_CATEGORIES)[number];
+export type BudgetCategory = string;
 
-export function isBudgetCategory(value: unknown): value is BudgetCategory {
-  return (
-    typeof value === "string" &&
-    (BUDGET_CATEGORIES as readonly string[]).includes(value)
-  );
+export const DEFAULT_BUDGET_CATEGORY: BudgetCategory = "Transport";
+
+/** Fallback de désérialisation quand la catégorie d'une ligne est vide. */
+export const FALLBACK_BUDGET_CATEGORY: BudgetCategory = "Autre";
+
+/** Ordonne les catégories : celles par défaut d'abord (ordre historique), puis les autres par ordre alphabétique. */
+export function compareBudgetCategories(a: BudgetCategory, b: BudgetCategory) {
+  const defaults = DEFAULT_BUDGET_CATEGORIES as readonly string[];
+  const indexA = defaults.indexOf(a);
+  const indexB = defaults.indexOf(b);
+
+  if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+  if (indexA !== -1) return -1;
+  if (indexB !== -1) return 1;
+  return a.localeCompare(b, "fr");
 }
 
 export const SPEND_LEVELS = [

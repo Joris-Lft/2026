@@ -5,6 +5,7 @@ import type {
   NoteStatus,
   UpdateNoteInput,
 } from "@/types/notes";
+import { mergeOptions } from "@/utils/options";
 import { notesTable } from "./airtable-client";
 import {
   AIRTABLE_NOTES_ASSIGNEES_FIELD,
@@ -99,7 +100,7 @@ function buildNoteFields(
     [AIRTABLE_NOTES_ASSIGNEES_FIELD]: assigneeIds,
     [AIRTABLE_NOTES_STATUS_FIELD]: status,
     [AIRTABLE_NOTES_ATTACHMENTS_FIELD]: toAirtableAttachments(input.attachmentUrls),
-    [AIRTABLE_NOTES_TAGS_FIELD]: input.tags,
+    [AIRTABLE_NOTES_TAGS_FIELD]: mergeOptions(input.tags),
   };
 }
 
@@ -129,7 +130,10 @@ export async function createNote(
       [AIRTABLE_NOTES_CREATED_AT_FIELD]: createdAt,
     };
 
-    const records = await notesTable.create([{ fields: fields as never }]);
+    // typecast : un tag absent du multi-select Airtable y est créé automatiquement.
+    const records = await notesTable.create([{ fields: fields as never }], {
+      typecast: true,
+    });
     const record = records[0];
     return { note: mapRecordToNote(record) };
   } catch (error: unknown) {
@@ -154,9 +158,10 @@ export async function updateNote(
       return { note: null, error: "Le contenu de la note est requis" };
     }
 
-    const records = await notesTable.update([
-      { id: input.id, fields: buildNoteFields(editorId, input) as never },
-    ]);
+    const records = await notesTable.update(
+      [{ id: input.id, fields: buildNoteFields(editorId, input) as never }],
+      { typecast: true },
+    );
     const record = records[0];
 
     return { note: mapRecordToNote(record) };

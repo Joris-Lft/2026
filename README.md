@@ -51,6 +51,10 @@ npm run dev
 
 Toutes les variables utilisent le préfixe `VITE_` (requis par Vite). Voir `env.template` pour la liste complète.
 
+Le token Airtable (`VITE_AIRTABLE_API_KEY`) doit porter les scopes `data.records:read`, `data.records:write` et `schema.bases:read` — ce dernier sert à lister les tags disponibles (les choix du champ `tags` de la table `Notes`, un multi-select). Sans lui, seuls les tags déjà posés sur les notes chargées sont proposés.
+
+Créer un tag depuis l'app ajoute un choix au multi-select Airtable (via l'option `typecast` du SDK) : il est donc visible par tout le monde et ne peut être supprimé que depuis Airtable. Les catégories de dépenses, elles, sont un simple champ texte : la liste proposée est reconstituée à partir des catégories déjà utilisées dans la table.
+
 ## Déploiement (GitHub Pages)
 
 Le site est déployé automatiquement sur chaque push vers `main` via GitHub Actions.

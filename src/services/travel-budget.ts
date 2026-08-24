@@ -1,14 +1,15 @@
 import {
-  BUDGET_CATEGORIES,
+  compareBudgetCategories,
   DEFAULT_SPEND_LEVEL,
   emptyBudgetTotals,
-  isBudgetCategory,
+  FALLBACK_BUDGET_CATEGORY,
   isSpendLevel,
   type BudgetLine,
   type CreateBudgetLineInput,
   type TravelBudgetTotals,
   type UpdateBudgetLineInput,
 } from "@/types/travel-budget";
+import { mergeOptions, normalizeOptionLabel } from "@/utils/options";
 import { travelBudgetTable } from "./airtable-client";
 import {
   AIRTABLE_TRAVEL_BUDGET_ACTUAL_FIELD,
@@ -45,7 +46,9 @@ function mapRecordToBudgetLine(record: {
   const rawSpendLevel = record.fields[AIRTABLE_TRAVEL_BUDGET_SPEND_LEVEL_FIELD];
   return {
     id: record.id,
-    category: isBudgetCategory(rawCategory) ? rawCategory : "Autre",
+    category:
+      normalizeOptionLabel(String(rawCategory ?? "")) ||
+      FALLBACK_BUDGET_CATEGORY,
     label: String(record.fields[AIRTABLE_TRAVEL_BUDGET_LABEL_FIELD] ?? ""),
     estimated: mapNumber(record.fields[AIRTABLE_TRAVEL_BUDGET_ESTIMATED_FIELD]),
     actual: mapNumber(record.fields[AIRTABLE_TRAVEL_BUDGET_ACTUAL_FIELD]),
@@ -60,9 +63,7 @@ function mapRecordToBudgetLine(record: {
 
 function sortBudgetLines(lines: BudgetLine[]): BudgetLine[] {
   return [...lines].sort((a, b) => {
-    const byCategory =
-      BUDGET_CATEGORIES.indexOf(a.category) -
-      BUDGET_CATEGORIES.indexOf(b.category);
+    const byCategory = compareBudgetCategories(a.category, b.category);
     if (byCategory !== 0) return byCategory;
     return a.label.localeCompare(b.label, "fr");
   });
@@ -74,7 +75,7 @@ function buildLineFields(
 ): Record<string, unknown> {
   return {
     [AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD]: travelId,
-    [AIRTABLE_TRAVEL_BUDGET_CATEGORY_FIELD]: input.category,
+    [AIRTABLE_TRAVEL_BUDGET_CATEGORY_FIELD]: normalizeOptionLabel(input.category),
     [AIRTABLE_TRAVEL_BUDGET_LABEL_FIELD]: input.label.trim(),
     [AIRTABLE_TRAVEL_BUDGET_ESTIMATED_FIELD]: input.estimated,
     [AIRTABLE_TRAVEL_BUDGET_ACTUAL_FIELD]: input.actual,
@@ -102,6 +103,12 @@ export type BudgetSummary = {
   totalsByTravel: Record<string, TravelBudgetTotals>;
   /** Dépensé par projet : réel payé (ou estimé) des items achetés. Ventilé par projet pour que chaque cagnotte (commune ou perso) ne soit débitée que par ses propres projets. */
   purchasedSpendByTravel: Record<string, number>;
+  /**
+   * Catégories utilisées dans toute la base : le champ `category` est un texte
+   * libre côté Airtable, les lignes existantes sont donc la seule source des
+   * catégories créées par les utilisateurs.
+   */
+  categories: string[];
 };
 
 /**
@@ -114,6 +121,7 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
     .select({
       fields: [
         AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD,
+        AIRTABLE_TRAVEL_BUDGET_CATEGORY_FIELD,
         AIRTABLE_TRAVEL_BUDGET_ESTIMATED_FIELD,
         AIRTABLE_TRAVEL_BUDGET_ACTUAL_FIELD,
         AIRTABLE_TRAVEL_BUDGET_PURCHASED_FIELD,
@@ -124,6 +132,11 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
 
   const totalsByTravel: Record<string, TravelBudgetTotals> = {};
   const purchasedSpendByTravel: Record<string, number> = {};
+  const categories = mergeOptions(
+    records.map((record) =>
+      String(record.fields[AIRTABLE_TRAVEL_BUDGET_CATEGORY_FIELD] ?? ""),
+    ),
+  );
 
   for (const record of records) {
     const travelId = record.fields[AIRTABLE_TRAVEL_BUDGET_TRAVEL_ID_FIELD];
@@ -153,7 +166,7 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
     entry.byLevel[level] += estimated;
   }
 
-  return { totalsByTravel, purchasedSpendByTravel };
+  return { totalsByTravel, purchasedSpendByTravel, categories };
 }
 
 export async function createBudgetLine(
@@ -164,9 +177,11 @@ export async function createBudgetLine(
     if (!input.label.trim()) {
       return { line: null, error: "Le libellé est requis" };
     }
-    const records = await travelBudgetTable.create([
-      { fields: buildLineFields(travelId, input) as never },
-    ]);
+    // typecast : une catégorie absente du select Airtable y est créée automatiquement.
+    const records = await travelBudgetTable.create(
+      [{ fields: buildLineFields(travelId, input) as never }],
+      { typecast: true },
+    );
     return { line: mapRecordToBudgetLine(records[0]) };
   } catch (error: unknown) {
     console.error("Create budget line error:", error);
@@ -188,9 +203,10 @@ export async function updateBudgetLine(
     if (!input.label.trim()) {
       return { line: null, error: "Le libellé est requis" };
     }
-    const records = await travelBudgetTable.update([
-      { id: input.id, fields: buildLineFields(travelId, input) as never },
-    ]);
+    const records = await travelBudgetTable.update(
+      [{ id: input.id, fields: buildLineFields(travelId, input) as never }],
+      { typecast: true },
+    );
     return { line: mapRecordToBudgetLine(records[0]) };
   } catch (error: unknown) {
     console.error("Update budget line error:", error);

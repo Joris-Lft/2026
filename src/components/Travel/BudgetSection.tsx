@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/Input";
 import { Markdown } from "@/components/ui/Markdown";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 import {
+  useBudgetCategoryOptions,
   useCreateBudgetLine,
   useDeleteBudgetLine,
   useTravelBudget,
   useUpdateBudgetLine,
 } from "@/hooks/use-travel-budget";
 import {
-  BUDGET_CATEGORIES,
+  compareBudgetCategories,
   isBudgetItem,
   sumPurchasedSpend,
   type BudgetLine,
@@ -22,6 +23,7 @@ import {
   type SpendLevel,
 } from "@/types/travel-budget";
 import { formatCurrency } from "@/utils/format";
+import { mergeOptions } from "@/utils/options";
 import { BudgetLineModal } from "./BudgetLineModal";
 import styles from "./BudgetSection.module.css";
 
@@ -39,6 +41,7 @@ export function BudgetSection({
   onShowOnMap?: (line: BudgetLine) => void;
 }) {
   const { data: lines = [], isLoading, isError } = useTravelBudget(travelId);
+  const { options: categoryOptions } = useBudgetCategoryOptions(lines);
   const createLine = useCreateBudgetLine(travelId);
   const updateLine = useUpdateBudgetLine(travelId);
   const deleteLine = useDeleteBudgetLine(travelId);
@@ -49,6 +52,16 @@ export function BudgetSection({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const budgetLines = useMemo(() => lines.filter(isBudgetItem), [lines]);
+
+  // Le filtre ne propose que les catégories réellement présentes ici, alors que la
+  // modale propose toutes celles de la base.
+  const filterCategories = useMemo(
+    () =>
+      mergeOptions(budgetLines.map((l) => l.category)).sort(
+        compareBudgetCategories,
+      ),
+    [budgetLines],
+  );
 
   const totals = useMemo(() => {
     const remaining = budgetLines
@@ -66,16 +79,16 @@ export function BudgetSection({
     const filtered = budgetLines.filter((l) => {
       const matchesCategory =
         selectedCategories.length === 0 ||
-        selectedCategories.includes(l.category);
+        selectedCategories.some(
+          (category) => category.toLowerCase() === l.category.toLowerCase(),
+        );
       const matchesSearch =
         query === "" || l.label.toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
 
     return [...filtered].sort((a, b) => {
-      const byCategory =
-        BUDGET_CATEGORIES.indexOf(a.category) -
-        BUDGET_CATEGORIES.indexOf(b.category);
+      const byCategory = compareBudgetCategories(a.category, b.category);
       if (byCategory !== 0) return byCategory;
       return a.label.localeCompare(b.label, "fr");
     });
@@ -165,7 +178,7 @@ export function BudgetSection({
               />
             </div>
             <TagFilter
-              tags={[...BUDGET_CATEGORIES]}
+              tags={filterCategories}
               selectedTags={selectedCategories}
               onChange={setSelectedCategories}
             />
@@ -191,6 +204,7 @@ export function BudgetSection({
       <BudgetLineModal
         isVisible={isModalVisible}
         initialLine={selectedLine}
+        categoryOptions={categoryOptions}
         createDefaults={{ inBudget: true, toVisit: false }}
         onClose={closeModal}
         onSubmit={handleSubmit}
