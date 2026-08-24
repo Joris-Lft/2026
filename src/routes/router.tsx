@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { RouteErrorPage } from "@/components/errors/RouteErrorPage";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { HabitPage } from "@/pages/HabitPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MeasurePage } from "@/pages/MeasurePage";
@@ -8,6 +9,7 @@ import { NotesPage } from "@/pages/NotesPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { CagnottePage } from "@/pages/CagnottePage";
 import { ProfilPage } from "@/pages/ProfilPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { SignupPage } from "@/pages/SignupPage";
 import { VoyageDetailPage } from "@/pages/VoyageDetailPage";
 import { VoyagesPage } from "@/pages/VoyagesPage";
@@ -30,6 +32,8 @@ export const router = createBrowserRouter(
         children: [
           { path: "login", element: <LoginPage />, handle: { title: "Connexion" } },
           { path: "signup", element: <SignupPage />, handle: { title: "Inscription" } },
+          { path: "forgot-password", element: <ForgotPasswordPage />, handle: { title: "Mot de passe oublié" } },
+          { path: "reset-password", element: <ResetPasswordPage />, handle: { title: "Réinitialisation" } },
         ],
       },
       {

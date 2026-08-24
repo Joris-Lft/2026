@@ -12,6 +12,7 @@
     "hash-password": "tsx scripts/hash-password.ts"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@tanstack/react-query": "^5.90.21",
     "airtable": "^0.12.2",
     "date-fns": "^4.1.0",
