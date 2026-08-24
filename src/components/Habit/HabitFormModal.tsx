@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { format, getISOWeek } from "date-fns";
+import { fr } from "date-fns/locale";
 import type {
   CreateHabitInput,
   Habit,
@@ -37,25 +39,28 @@ function HabitFormModalContent({
     () => editingHabit?.frequency ?? "daily",
   );
   const [startDate] = useState(new Date());
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      alert("Veuillez entrer un nom de tracking");
+      setError("Veuillez entrer un nom de tracking");
       return;
     }
 
     if (editingHabit) {
+      // La date de début est en lecture seule dans le formulaire : on ne la
+      // réécrit pas avec la date du jour.
       onUpdate?.({
         id: editingHabit.id,
         name: title,
         frequency: selectedType,
-        createdAt: startDate.toISOString().split("T")[0],
       });
     } else {
       onCreate?.({
         name: title,
         frequency: selectedType,
-        createdAt: startDate.toISOString().split("T")[0],
+        // `format` et non `toISOString`, qui bascule sur la veille en soirée.
+        createdAt: format(startDate, "yyyy-MM-dd"),
       });
     }
 
@@ -69,27 +74,16 @@ function HabitFormModalContent({
       ? new Date(editingHabit.created_at as string)
       : startDate;
 
+    // Mieux vaut ne rien afficher qu'une date inventée pour un habit existant.
+    if (Number.isNaN(displayDate.getTime())) return "—";
+
     switch (selectedType) {
       case "daily":
-        return displayDate.toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-      case "weekly": {
-        const firstDayOfYear = new Date(displayDate.getFullYear(), 0, 1);
-        const pastDaysOfYear =
-          (displayDate.getTime() - firstDayOfYear.getTime()) / 86400000;
-        const weekNumber = Math.ceil(
-          (pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7,
-        );
-        return `Semaine ${weekNumber}`;
-      }
+        return format(displayDate, "dd/MM/yyyy", { locale: fr });
+      case "weekly":
+        return `Semaine ${getISOWeek(displayDate)}`;
       case "monthly":
-        return displayDate.toLocaleDateString("fr-FR", {
-          month: "long",
-          year: "numeric",
-        });
+        return format(displayDate, "MMMM yyyy", { locale: fr });
     }
   };
 
@@ -107,12 +101,16 @@ function HabitFormModalContent({
         />
       }
     >
-      <FormField label="Nom du tracking" htmlFor="habit-title">
+      <FormField label="Nom du tracking" htmlFor="habit-title" error={error}>
         <Input
           id="habit-title"
           placeholder="Ex: Boire 2L d'eau"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setError(null);
+          }}
         />
       </FormField>
 

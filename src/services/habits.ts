@@ -1,17 +1,33 @@
+import { format } from "date-fns";
 import type {
   CreateHabitInput,
   Habit,
   HabitFrequency,
   UpdateHabitInput,
 } from "@/types/habits";
-import type { ISOStringFormat } from "date-fns";
 import { habitsTable } from "./airtable-client";
 import {
   AIRTABLE_HABITS_CREATED_AT_FIELD,
+  AIRTABLE_HABITS_DELETED_DATE_FIELD,
   AIRTABLE_HABITS_FREQUENCY_FIELD,
+  AIRTABLE_HABITS_IS_ACTIVE_FIELD,
   AIRTABLE_HABITS_NAME_FIELD,
   AIRTABLE_HABITS_USER_ID_FIELD,
 } from "./airtable-config";
+import { formulaValue } from "./airtable-formula";
+import { firstLinkedId } from "./airtable-record";
+
+function toHabit(record: { id: string; fields: Record<string, unknown> }): Habit {
+  // Les champs bruts d'abord : les valeurs normalisées ci-dessous doivent
+  // l'emporter (`user_id` arrive d'Airtable sous forme de tableau).
+  return {
+    ...record.fields,
+    id: record.id,
+    user_id: firstLinkedId(record.fields[AIRTABLE_HABITS_USER_ID_FIELD]) ?? "",
+    name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
+    frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+  };
+}
 
 export async function createHabit(
   userId: string,
@@ -23,26 +39,12 @@ export async function createHabit(
       [AIRTABLE_HABITS_FREQUENCY_FIELD]: habitData.frequency,
       [AIRTABLE_HABITS_CREATED_AT_FIELD]: habitData.createdAt,
       [AIRTABLE_HABITS_USER_ID_FIELD]: [userId],
+      [AIRTABLE_HABITS_IS_ACTIVE_FIELD]: true,
     };
 
     const [record] = await habitsTable.create([{ fields }]);
 
-    const habit: Habit = {
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      created_at: record.fields[
-        AIRTABLE_HABITS_CREATED_AT_FIELD
-      ] as ISOStringFormat,
-      ...record.fields,
-    };
-
-    return { habit };
+    return { habit: toHabit(record) };
   } catch (error: any) {
     console.error("Create habit error:", error);
     return {
@@ -53,132 +55,34 @@ export async function createHabit(
 }
 
 /**
- * Récupère tous les habits d'un utilisateur
- * @param userId - L'ID de l'utilisateur connecté
- * @returns Liste des habits de l'utilisateur, triés par ordre alphabétique
+ * Récupère les habits actifs d'un utilisateur, toutes fréquences confondues.
+ *
+ * Une seule requête sert les trois périodes affichées : le tri par fréquence se
+ * fait côté client.
+ * Laisse remonter l'erreur : une liste vide serait indiscernable d'un
+ * utilisateur sans habit, et ferait recréer des logs déjà existants.
+ * @param userId - L'email de l'utilisateur (valeur affichée du champ lié)
+ * @returns Liste des habits actifs, triés par ordre alphabétique
  */
-export async function getHabitsByUser(userId: string): Promise<Habit[]> {
+export async function getActiveHabits(userId: string): Promise<Habit[]> {
   try {
     const records = await habitsTable
       .select({
-        filterByFormula: `{${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}"`,
+        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = ${formulaValue(userId)}, {${AIRTABLE_HABITS_IS_ACTIVE_FIELD}})`,
         sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
       })
       .all();
 
-    return records.map((record) => ({
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      ...record.fields,
-    }));
+    return records.map(toHabit);
   } catch (error) {
-    console.error("Get habits by user error:", error);
-    return [];
-  }
-}
-
-/**
- * Récupère les habits quotidiens d'un utilisateur
- * @param userId - L'email de l'utilisateur connecté
- * @returns Liste des habits quotidiens, triés par ordre alphabétique
- */
-export async function getDailyHabits(userId: string): Promise<Habit[]> {
-  try {
-    const records = await habitsTable
-      .select({
-        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "daily")`,
-        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
-      })
-      .all();
-
-    return records.map((record) => ({
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      ...record.fields,
-    }));
-  } catch (error) {
-    console.error("Get daily habits error:", error);
-    return [];
-  }
-}
-
-/**
- * Récupère les habits hebdomadaires d'un utilisateur
- * @param userId - L'ID de l'utilisateur connecté
- * @returns Liste des habits hebdomadaires, triés par ordre alphabétique
- */
-export async function getWeeklyHabits(userId: string): Promise<Habit[]> {
-  try {
-    const records = await habitsTable
-      .select({
-        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "weekly")`,
-        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
-      })
-      .all();
-
-    return records.map((record) => ({
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      ...record.fields,
-    }));
-  } catch (error) {
-    console.error("Get weekly habits error:", error);
-    return [];
-  }
-}
-
-/**
- * Récupère les habits mensuels d'un utilisateur
- * @param userId - L'ID de l'utilisateur connecté
- * @returns Liste des habits mensuels, triés par ordre alphabétique
- */
-export async function getMonthlyHabits(userId: string): Promise<Habit[]> {
-  try {
-    const records = await habitsTable
-      .select({
-        filterByFormula: `AND({${AIRTABLE_HABITS_USER_ID_FIELD}} = "${userId}", {${AIRTABLE_HABITS_FREQUENCY_FIELD}} = "monthly")`,
-        sort: [{ field: AIRTABLE_HABITS_NAME_FIELD, direction: "asc" }],
-      })
-      .all();
-
-    return records.map((record) => ({
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      ...record.fields,
-    }));
-  } catch (error) {
-    console.error("Get monthly habits error:", error);
-    return [];
+    // On trace puis on relaie : l'appelant doit voir l'échec, pas une liste vide.
+    console.error("Get active habits error:", error);
+    throw error;
   }
 }
 
 /**
  * Met à jour un habit existant
- * @param habitId - L'ID de l'habit à modifier
  * @param updates - Les champs à mettre à jour
  * @returns L'habit mis à jour ou null en cas d'erreur
  */
@@ -194,22 +98,13 @@ export async function updateHabit(
     if (updates.frequency !== undefined) {
       fields[AIRTABLE_HABITS_FREQUENCY_FIELD] = updates.frequency;
     }
+    if (updates.createdAt !== undefined) {
+      fields[AIRTABLE_HABITS_CREATED_AT_FIELD] = updates.createdAt;
+    }
 
     const [record] = await habitsTable.update([{ id: updates.id, fields }]);
 
-    const habit: Habit = {
-      id: record.id,
-      user_id: Array.isArray(record.fields[AIRTABLE_HABITS_USER_ID_FIELD])
-        ? (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string[])[0]
-        : (record.fields[AIRTABLE_HABITS_USER_ID_FIELD] as string),
-      name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
-      frequency: record.fields[
-        AIRTABLE_HABITS_FREQUENCY_FIELD
-      ] as HabitFrequency,
-      ...record.fields,
-    };
-
-    return { habit };
+    return { habit: toHabit(record) };
   } catch (error: any) {
     console.error("Update habit error:", error);
     return {
@@ -220,15 +115,27 @@ export async function updateHabit(
 }
 
 /**
- * Supprime un habit
- * @param habitId - L'ID de l'habit à supprimer
- * @returns true si la suppression a réussi, false sinon
+ * Archive un habit : il disparaît des listes mais ses logs conservent leur lien,
+ * donc l'historique reste exploitable.
+ * @param habitId - L'ID de l'habit à archiver
+ * @returns true si l'archivage a réussi, false sinon
  */
 export async function deleteHabit(
   habitId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await habitsTable.destroy([habitId]);
+    await habitsTable.update([
+      {
+        id: habitId,
+        fields: {
+          [AIRTABLE_HABITS_IS_ACTIVE_FIELD]: false,
+          [AIRTABLE_HABITS_DELETED_DATE_FIELD]: format(
+            new Date(),
+            "yyyy-MM-dd",
+          ),
+        },
+      },
+    ]);
     return { success: true };
   } catch (error: any) {
     console.error("Delete habit error:", error);
