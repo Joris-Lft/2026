@@ -4,20 +4,29 @@ import {
   AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD,
 } from "./airtable-config";
 import { usersTable } from "./airtable-client";
-import type { NavigationPreferences } from "@/types/navigation-preferences";
+import type {
+  NavFeature,
+  NavigationPreferences,
+} from "@/types/navigation-preferences";
 
-function parseCheckbox(value: unknown): boolean {
-  return value === true;
-}
+/** Champ Airtable (case à cocher) correspondant à chaque fonctionnalité. */
+const FIELD_BY_FEATURE: Record<NavFeature, string> = {
+  habits: AIRTABLE_SHOW_HABITS_FIELD,
+  measures: AIRTABLE_SHOW_MEASURES_FIELD,
+  personalProjects: AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD,
+};
+
+const NAV_FEATURES = Object.keys(FIELD_BY_FEATURE) as NavFeature[];
 
 export function parseNavigationPreferences(
   fields: Record<string, unknown>,
 ): NavigationPreferences {
-  return {
-    habits: parseCheckbox(fields[AIRTABLE_SHOW_HABITS_FIELD]),
-    measures: parseCheckbox(fields[AIRTABLE_SHOW_MEASURES_FIELD]),
-    personalProjects: parseCheckbox(fields[AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD]),
-  };
+  return Object.fromEntries(
+    NAV_FEATURES.map((feature) => [
+      feature,
+      fields[FIELD_BY_FEATURE[feature]] === true,
+    ]),
+  ) as NavigationPreferences;
 }
 
 export async function fetchNavigationPreferences(
@@ -27,15 +36,23 @@ export async function fetchNavigationPreferences(
   return parseNavigationPreferences(record.fields);
 }
 
+/**
+ * N'écrit que les champs fournis. Envoyer les trois systématiquement
+ * réécrirait des préférences qu'on n'a peut-être jamais réussi à lire.
+ */
 export async function updateNavigationPreferences(
   userId: string,
-  preferences: NavigationPreferences,
+  changes: Partial<NavigationPreferences>,
 ): Promise<void> {
-  await usersTable.update(userId, {
-    [AIRTABLE_SHOW_HABITS_FIELD]: preferences.habits,
-    [AIRTABLE_SHOW_MEASURES_FIELD]: preferences.measures,
-    [AIRTABLE_SHOW_PERSONAL_PROJECTS_FIELD]: preferences.personalProjects,
-  });
+  const fields = Object.fromEntries(
+    NAV_FEATURES.filter((feature) => changes[feature] !== undefined).map(
+      (feature) => [FIELD_BY_FEATURE[feature], changes[feature]],
+    ),
+  );
+
+  if (Object.keys(fields).length === 0) return;
+
+  await usersTable.update(userId, fields);
 }
 
 export function getAirtableErrorMessage(error: unknown): string {
