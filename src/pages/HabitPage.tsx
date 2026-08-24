@@ -7,10 +7,10 @@ import { PeriodHabit } from "@/components/Habit/PeriodHabit";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageShell } from "@/components/ui/PageShell";
-import type { PeriodData } from "@/types/tracking";
+import type { PeriodType } from "@/types/tracking";
 import styles from "./HabitPage.module.css";
 
-const periods: PeriodData["period"][] = ["day", "week", "month"];
+const periods: PeriodType[] = ["day", "week", "month"];
 
 export function HabitPage() {
   const { user } = useAuth();
