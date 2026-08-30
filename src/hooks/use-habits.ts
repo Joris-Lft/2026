@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   useQuery,
   useMutation,
@@ -16,8 +16,17 @@ import {
   createHabitLog,
   deleteHabitLog,
   getHabitLogsForPeriods,
-  getPeriodKey,
 } from "@/services/habits-logs";
+import {
+  getPeriodKey,
+  getRecentPeriodKeys,
+} from "@/utils/habit-periods";
+import {
+  buildHeatmapSection,
+  completionKey,
+  HEATMAP_WINDOWS,
+  type HeatmapSection,
+} from "@/utils/habit-heatmap";
 import type {
   CreateHabitInput,
   Habit,
@@ -38,6 +47,22 @@ type HabitsOverview = Record<PeriodType, HabitWithStatus[]>;
 
 /** Clé de période courante, par fréquence. */
 type PeriodKeys = Record<HabitFrequency, string>;
+
+/** Colonnes de la grille d'assiduité, par fréquence. */
+type HistoryKeys = Record<HabitFrequency, string[]>;
+
+/**
+ * Tout ce que l'écran de tracking tire d'un seul aller-retour : les listes de
+ * la période courante et l'historique qui alimente la grille d'assiduité.
+ */
+interface HabitsData {
+  habits: Habit[];
+  periods: HabitsOverview;
+  /** Clés `habitId|periodKey` des cases cochées sur toute la fenêtre. */
+  completions: string[];
+}
+
+const FREQUENCIES: HabitFrequency[] = ["daily", "weekly", "monthly"];
 
 const FREQUENCY_BY_PERIOD: Record<PeriodType, HabitFrequency> = {
   day: "daily",
@@ -144,6 +169,20 @@ export function useCurrentPeriodKeys(): PeriodKeys {
   }, [today]);
 }
 
+/** Colonnes de la grille : les N dernières périodes de chaque fréquence. */
+function useHistoryPeriodKeys(): HistoryKeys {
+  const today = useToday();
+
+  return useMemo(() => {
+    const date = new Date(`${today}T00:00:00`);
+    return {
+      daily: getRecentPeriodKeys("daily", date, HEATMAP_WINDOWS.daily),
+      weekly: getRecentPeriodKeys("weekly", date, HEATMAP_WINDOWS.weekly),
+      monthly: getRecentPeriodKeys("monthly", date, HEATMAP_WINDOWS.monthly),
+    };
+  }, [today]);
+}
+
 function buildOverview(
   habits: Habit[],
   logs: HabitLog[],
@@ -151,7 +190,7 @@ function buildOverview(
 ): HabitsOverview {
   const logsByHabitAndPeriod = new Map<string, HabitLog>();
   logs.forEach((log) =>
-    logsByHabitAndPeriod.set(`${log.habit_id}|${log.period}`, log),
+    logsByHabitAndPeriod.set(completionKey(log.habit_id, log.period), log),
   );
 
   const overview = createEmptyOverview();
@@ -164,7 +203,7 @@ function buildOverview(
     }
 
     const log = logsByHabitAndPeriod.get(
-      `${habit.id}|${periodKeys[habit.frequency]}`,
+      completionKey(habit.id, periodKeys[habit.frequency]),
     );
 
     overview[period].push({
@@ -195,33 +234,95 @@ function toggleMutationKey(period: PeriodType, userEmail: string | undefined) {
   return [...TOGGLE_MUTATION_SCOPE, period, userEmail] as const;
 }
 
+function createEmptyData(): HabitsData {
+  return { habits: [], periods: createEmptyOverview(), completions: [] };
+}
+
 /**
- * Habits d'une période, avec leur statut pour la période courante.
+ * Requête unique de l'écran de tracking : les listes de la période courante et
+ * l'historique de la grille d'assiduité.
  *
- * Les trois périodes partagent la même requête : elle n'est donc exécutée
- * qu'une fois (2 appels Airtable au total, au lieu de 6).
+ * Les trois périodes et la grille partagent la même requête : elle n'est donc
+ * exécutée qu'une fois (2 appels Airtable au total, au lieu de 8).
  */
+function useHabitsData<TResult>(
+  userEmail: string | undefined,
+  select: (data: HabitsData) => TResult,
+) {
+  const periodKeys = useCurrentPeriodKeys();
+  const historyKeys = useHistoryPeriodKeys();
+
+  return useQuery({
+    queryKey: habitsQueryKey(userEmail, periodKeys),
+    queryFn: async (): Promise<HabitsData> => {
+      if (!userEmail) return createEmptyData();
+
+      // L'historique contient déjà les périodes courantes : une seule liste de
+      // clés, donc une seule requête de logs.
+      const allKeys = [...new Set(Object.values(historyKeys).flat())];
+
+      const [habits, logs] = await Promise.all([
+        getActiveHabits(userEmail),
+        getHabitLogsForPeriods(userEmail, allKeys),
+      ]);
+
+      return {
+        habits,
+        periods: buildOverview(habits, logs, periodKeys),
+        completions: logs.map((log) => completionKey(log.habit_id, log.period)),
+      };
+    },
+    enabled: !!userEmail,
+    select,
+  });
+}
+
+/** Habits d'une période, avec leur statut pour la période courante. */
 export function usePeriodHabits(
   period: PeriodType,
   userEmail: string | undefined,
 ) {
+  return useHabitsData(
+    userEmail,
+    useCallback((data: HabitsData) => data.periods[period], [period]),
+  );
+}
+
+/**
+ * Grille d'assiduité : une section par fréquence, sans celles qui n'ont aucune
+ * habitude.
+ */
+export function useHabitsHeatmap(userEmail: string | undefined) {
   const periodKeys = useCurrentPeriodKeys();
+  const historyKeys = useHistoryPeriodKeys();
 
-  return useQuery({
-    queryKey: habitsQueryKey(userEmail, periodKeys),
-    queryFn: async () => {
-      if (!userEmail) return createEmptyOverview();
+  const select = useCallback(
+    (data: HabitsData): HeatmapSection[] => {
+      const completions = new Set(data.completions);
 
-      const [habits, logs] = await Promise.all([
-        getActiveHabits(userEmail),
-        getHabitLogsForPeriods(userEmail, Object.values(periodKeys)),
-      ]);
+      // La période courante suit l'état (optimiste) des listes : cocher une
+      // case doit remplir la dernière colonne sans attendre le refetch.
+      FREQUENCIES.forEach((frequency) => {
+        data.periods[PERIOD_BY_FREQUENCY[frequency]].forEach((habit) => {
+          const key = completionKey(habit.id, periodKeys[frequency]);
+          if (habit.completed) completions.add(key);
+          else completions.delete(key);
+        });
+      });
 
-      return buildOverview(habits, logs, periodKeys);
+      return FREQUENCIES.map((frequency) =>
+        buildHeatmapSection(
+          frequency,
+          data.habits,
+          completions,
+          historyKeys[frequency],
+        ),
+      ).filter((section) => section.rows.length > 0);
     },
-    enabled: !!userEmail,
-    select: (overview: HabitsOverview) => overview[period],
-  });
+    [historyKeys, periodKeys],
+  );
+
+  return useHabitsData(userEmail, select);
 }
 
 export function useCreateHabit(userId: string | undefined) {
@@ -303,13 +404,16 @@ export function useToggleHabitLog(
     habitId: string,
     patch: Partial<HabitWithStatus>,
   ) =>
-    queryClient.setQueryData<HabitsOverview>(queryKey, (current) =>
+    queryClient.setQueryData<HabitsData>(queryKey, (current) =>
       current
         ? {
             ...current,
-            [period]: current[period].map((item) =>
-              item.id === habitId ? { ...item, ...patch } : item,
-            ),
+            periods: {
+              ...current.periods,
+              [period]: current.periods[period].map((item) =>
+                item.id === habitId ? { ...item, ...patch } : item,
+              ),
+            },
           }
         : current,
     );
@@ -343,7 +447,7 @@ export function useToggleHabitLog(
     // millisecondes, l'attendre donnait l'impression que le clic était perdu.
     onMutate: async (habit: HabitWithStatus) => {
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<HabitsOverview>(queryKey);
+      const previous = queryClient.getQueryData<HabitsData>(queryKey);
 
       patchHabit(habit.id, {
         completed: !habit.completed,

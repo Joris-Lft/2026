@@ -16,6 +16,8 @@ export interface Habit {
   user_id: string;
   name: string;
   frequency: HabitFrequency;
+  /** Date de création (`yyyy-MM-dd`) : borne le début de l'historique. */
+  created_at?: string;
   [key: string]: any;
 }
 
