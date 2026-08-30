@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useCreateHabit } from "@/hooks/use-habits";
 import type { CreateHabitInput } from "@/types/habits";
 import { HabitFormModal } from "@/components/Habit/HabitFormModal";
+import { HabitHeatmap } from "@/components/Habit/HabitHeatmap";
 import { PeriodHabit } from "@/components/Habit/PeriodHabit";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -56,6 +57,8 @@ export function HabitPage() {
           </>
         }
       />
+
+      <HabitHeatmap />
 
       <div className={styles.periods}>
         {periods.map((period) => (

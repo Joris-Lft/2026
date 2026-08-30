@@ -26,6 +26,11 @@ function toHabit(record: { id: string; fields: Record<string, unknown> }): Habit
     user_id: firstLinkedId(record.fields[AIRTABLE_HABITS_USER_ID_FIELD]) ?? "",
     name: record.fields[AIRTABLE_HABITS_NAME_FIELD] as string,
     frequency: record.fields[AIRTABLE_HABITS_FREQUENCY_FIELD] as HabitFrequency,
+    // Normalisé ici : le nom du champ Airtable est configurable, mais
+    // l'historique a besoin d'une clé stable.
+    created_at: record.fields[AIRTABLE_HABITS_CREATED_AT_FIELD] as
+      | string
+      | undefined,
   };
 }
 

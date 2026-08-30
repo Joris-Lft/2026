@@ -1,4 +1,3 @@
-import { format, getISOWeek, getISOWeekYear } from "date-fns";
 import {
   AIRTABLE_HABITS_LOGS_HABIT_ID_FIELD,
   AIRTABLE_HABITS_LOGS_USER_ID_FIELD,
@@ -14,27 +13,6 @@ import type {
   CreateHabitLogInput,
 } from "@/types/habits";
 import { habitsLogsTable } from "./airtable-client";
-
-/**
- * Clé de période d'un log, unique dans le temps et triable alphabétiquement :
- * `2026-08-24`, `2026-W35`, `2026-08`.
- *
- * L'année fait partie de la clé : sans elle, les logs d'une même semaine (ou
- * d'un même mois) se confondaient d'une année sur l'autre.
- *
- * La semaine suit la norme ISO (lundi → dimanche) et emploie l'année ISO, pour
- * que les semaines à cheval sur le 1er janvier tombent bien dans une seule clé.
- */
-export function getPeriodKey(frequency: HabitFrequency, date: Date): string {
-  switch (frequency) {
-    case "daily":
-      return format(date, "yyyy-MM-dd");
-    case "weekly":
-      return `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, "0")}`;
-    case "monthly":
-      return format(date, "yyyy-MM");
-  }
-}
 
 function toHabitLog(record: {
   id: string;
