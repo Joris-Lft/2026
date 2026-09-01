@@ -17,16 +17,14 @@ import {
   deleteHabitLog,
   getHabitLogsForPeriods,
 } from "@/services/habits-logs";
+import { getPeriodKey } from "@/utils/habit-periods";
 import {
-  getPeriodKey,
-  getRecentPeriodKeys,
-} from "@/utils/habit-periods";
-import {
-  buildHeatmapSection,
+  buildArcTable,
   completionKey,
-  HEATMAP_WINDOWS,
-  type HeatmapSection,
-} from "@/utils/habit-heatmap";
+  getArcPeriodKeys,
+  type ArcTableModel,
+} from "@/utils/arc-table";
+import { ARC_END, ARC_START } from "@/constants/arc";
 import type {
   CreateHabitInput,
   Habit,
@@ -48,18 +46,10 @@ type HabitsOverview = Record<PeriodType, HabitWithStatus[]>;
 /** Clé de période courante, par fréquence. */
 type PeriodKeys = Record<HabitFrequency, string>;
 
-/** Colonnes de la grille d'assiduité, par fréquence. */
-type HistoryKeys = Record<HabitFrequency, string[]>;
-
-/**
- * Tout ce que l'écran de tracking tire d'un seul aller-retour : les listes de
- * la période courante et l'historique qui alimente la grille d'assiduité.
- */
+/** Ce que l'écran de tracking tire d'un aller-retour : les listes du jour. */
 interface HabitsData {
   habits: Habit[];
   periods: HabitsOverview;
-  /** Clés `habitId|periodKey` des cases cochées sur toute la fenêtre. */
-  completions: string[];
 }
 
 const FREQUENCIES: HabitFrequency[] = ["daily", "weekly", "monthly"];
@@ -169,20 +159,6 @@ export function useCurrentPeriodKeys(): PeriodKeys {
   }, [today]);
 }
 
-/** Colonnes de la grille : les N dernières périodes de chaque fréquence. */
-function useHistoryPeriodKeys(): HistoryKeys {
-  const today = useToday();
-
-  return useMemo(() => {
-    const date = new Date(`${today}T00:00:00`);
-    return {
-      daily: getRecentPeriodKeys("daily", date, HEATMAP_WINDOWS.daily),
-      weekly: getRecentPeriodKeys("weekly", date, HEATMAP_WINDOWS.weekly),
-      monthly: getRecentPeriodKeys("monthly", date, HEATMAP_WINDOWS.monthly),
-    };
-  }, [today]);
-}
-
 function buildOverview(
   habits: Habit[],
   logs: HabitLog[],
@@ -235,42 +211,34 @@ function toggleMutationKey(period: PeriodType, userEmail: string | undefined) {
 }
 
 function createEmptyData(): HabitsData {
-  return { habits: [], periods: createEmptyOverview(), completions: [] };
+  return { habits: [], periods: createEmptyOverview() };
 }
 
 /**
- * Requête unique de l'écran de tracking : les listes de la période courante et
- * l'historique de la grille d'assiduité.
+ * Requête des listes à cocher : les trois périodes courantes partagent le même
+ * aller-retour, exécuté une seule fois (2 appels Airtable au lieu de 6).
  *
- * Les trois périodes et la grille partagent la même requête : elle n'est donc
- * exécutée qu'une fois (2 appels Airtable au total, au lieu de 8).
+ * L'historique de l'arc est volontairement à part (`useArcLogs`) : ses ~140
+ * clés de période mettent près de trois secondes à revenir, et les listes ne
+ * doivent pas les attendre.
  */
 function useHabitsData<TResult>(
   userEmail: string | undefined,
   select: (data: HabitsData) => TResult,
 ) {
   const periodKeys = useCurrentPeriodKeys();
-  const historyKeys = useHistoryPeriodKeys();
 
   return useQuery({
     queryKey: habitsQueryKey(userEmail, periodKeys),
     queryFn: async (): Promise<HabitsData> => {
       if (!userEmail) return createEmptyData();
 
-      // L'historique contient déjà les périodes courantes : une seule liste de
-      // clés, donc une seule requête de logs.
-      const allKeys = [...new Set(Object.values(historyKeys).flat())];
-
       const [habits, logs] = await Promise.all([
         getActiveHabits(userEmail),
-        getHabitLogsForPeriods(userEmail, allKeys),
+        getHabitLogsForPeriods(userEmail, Object.values(periodKeys)),
       ]);
 
-      return {
-        habits,
-        periods: buildOverview(habits, logs, periodKeys),
-        completions: logs.map((log) => completionKey(log.habit_id, log.period)),
-      };
+      return { habits, periods: buildOverview(habits, logs, periodKeys) };
     },
     enabled: !!userEmail,
     select,
@@ -288,41 +256,80 @@ export function usePeriodHabits(
   );
 }
 
+/** Clés de période couvertes par l'arc : constantes, calculées une seule fois. */
+const ARC_PERIOD_KEYS = getArcPeriodKeys(ARC_START, ARC_END);
+const ALL_ARC_KEYS = [...new Set(Object.values(ARC_PERIOD_KEYS).flat())];
+
 /**
- * Grille d'assiduité : une section par fréquence, sans celles qui n'ont aucune
- * habitude.
+ * Logs de tout l'arc. Requête séparée de celle des listes : elle est lente, et
+ * n'a pas à être rejouée à chaque bascule — la période courante est corrigée
+ * côté client par `useArcTable`.
  */
-export function useHabitsHeatmap(userEmail: string | undefined) {
+function useArcLogs(userEmail: string | undefined) {
+  return useQuery({
+    queryKey: ["habit-arc-logs", userEmail, ARC_START, ARC_END] as const,
+    queryFn: () =>
+      userEmail ? getHabitLogsForPeriods(userEmail, ALL_ARC_KEYS) : [],
+    enabled: !!userEmail,
+  });
+}
+
+/** `select` identité : `useArcTable` a besoin des habits comme des listes. */
+const selectAll = (data: HabitsData) => data;
+
+/**
+ * Le tableau de l'arc : une ligne par habitude, une colonne par jour.
+ *
+ * Les deux requêtes se chargent en parallèle et le tableau n'apparaît qu'une
+ * fois les deux revenues, mais les listes à cocher, elles, s'affichent dès la
+ * première.
+ */
+export function useArcTable(userEmail: string | undefined): {
+  table: ArcTableModel | undefined;
+  isLoading: boolean;
+  isLoadingError: boolean;
+} {
+  const today = useToday();
   const periodKeys = useCurrentPeriodKeys();
-  const historyKeys = useHistoryPeriodKeys();
+  const habitsQuery = useHabitsData(userEmail, selectAll);
+  const logsQuery = useArcLogs(userEmail);
 
-  const select = useCallback(
-    (data: HabitsData): HeatmapSection[] => {
-      const completions = new Set(data.completions);
+  const { data: habitsData } = habitsQuery;
+  const { data: arcLogs } = logsQuery;
 
-      // La période courante suit l'état (optimiste) des listes : cocher une
-      // case doit remplir la dernière colonne sans attendre le refetch.
-      FREQUENCIES.forEach((frequency) => {
-        data.periods[PERIOD_BY_FREQUENCY[frequency]].forEach((habit) => {
-          const key = completionKey(habit.id, periodKeys[frequency]);
-          if (habit.completed) completions.add(key);
-          else completions.delete(key);
-        });
+  const table = useMemo(() => {
+    if (!habitsData || !arcLogs) return undefined;
+
+    const completions = new Set(
+      arcLogs.map((log) => completionKey(log.habit_id, log.period)),
+    );
+
+    // La période courante suit l'état (optimiste) des listes : cocher une case
+    // doit remplir la colonne du jour sans attendre le refetch de l'arc.
+    FREQUENCIES.forEach((frequency) => {
+      habitsData.periods[PERIOD_BY_FREQUENCY[frequency]].forEach((habit) => {
+        const key = completionKey(habit.id, periodKeys[frequency]);
+        if (habit.completed) completions.add(key);
+        else completions.delete(key);
       });
+    });
 
-      return FREQUENCIES.map((frequency) =>
-        buildHeatmapSection(
-          frequency,
-          data.habits,
-          completions,
-          historyKeys[frequency],
-        ),
-      ).filter((section) => section.rows.length > 0);
-    },
-    [historyKeys, periodKeys],
-  );
+    return buildArcTable(
+      habitsData.habits,
+      completions,
+      today,
+      ARC_START,
+      ARC_END,
+    );
+  }, [arcLogs, habitsData, periodKeys, today]);
 
-  return useHabitsData(userEmail, select);
+  return {
+    table,
+    isLoading: habitsQuery.isLoading || logsQuery.isLoading,
+    // `isLoadingError` et non `isError` : un refetch d'arrière-plan qui échoue
+    // ne doit pas remplacer un tableau déjà affiché par un message d'erreur.
+    isLoadingError: habitsQuery.isLoadingError || logsQuery.isLoadingError,
+  };
 }
 
 export function useCreateHabit(userId: string | undefined) {

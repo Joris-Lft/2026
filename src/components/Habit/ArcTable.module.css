@@ -1,0 +1,222 @@
+.container {
+  padding: 20px 0 0;
+  width: 100%;
+}
+
+/* Le défilement va jusqu'au bord droit de la carte : à gauche, la marge sert
+   d'alignement aux colonnes collées. */
+.card {
+  padding: 16px 0 16px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.head {
+  padding-right: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 2px 0 14px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0 16px 6px 0;
+}
+
+.grid {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+  /* Géométrie partagée : `ArcTable.tsx` calcule la largeur des cases et la
+     position du repère du jour à partir de ces mêmes variables. */
+  --day-w: 6px;
+  --gap: 1px;
+  --name-w: 116px;
+  --score-w: 46px;
+}
+
+/* ---------- En-tête des mois ---------- */
+
+.monthRow {
+  display: flex;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.monthSpacer {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  width: calc(var(--name-w) + var(--score-w));
+  background: var(--color-surface);
+}
+
+.month {
+  flex-shrink: 0;
+  border-left: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+/* Le libellé se cale contre les colonnes collées tant que son mois est visible :
+   sans cela, « décembre » glisse sous elles et se lit « mbre ». */
+.monthLabel {
+  position: sticky;
+  left: calc(var(--name-w) + var(--score-w));
+  display: inline-block;
+  padding: 0 6px 0 3px;
+  background: var(--color-surface);
+}
+
+/* ---------- Lignes ---------- */
+
+.section + .section {
+  margin-top: 16px;
+}
+
+/* Collé lui aussi : au défilement, les sections perdaient leur intitulé. */
+.sectionTitle {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: inline-block;
+  padding-right: 10px;
+  background: var(--color-surface);
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.row + .row {
+  margin-top: 2px;
+}
+
+/* Collés à gauche : sur 122 colonnes, le nom et le score sortiraient de l'écran. */
+.name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  width: var(--name-w);
+  padding-right: 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--color-surface);
+}
+
+.score {
+  position: sticky;
+  left: var(--name-w);
+  z-index: 2;
+  flex-shrink: 0;
+  width: var(--score-w);
+  padding-right: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+
+.cells {
+  display: flex;
+  gap: var(--gap);
+}
+
+.cell {
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-tint) 9%, transparent);
+}
+
+.done {
+  background: var(--color-tint);
+}
+
+/* Période pas encore commencée : la case existe, mais rien n'y est jouable. */
+.future {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+/* Période antérieure à la création de l'habitude : neutre, hors calcul. */
+.inactive {
+  background: var(--color-border);
+}
+
+/* ---------- Repère du jour ---------- */
+
+.todayLine {
+  position: absolute;
+  top: 18px;
+  bottom: 0;
+  z-index: 1;
+  width: 1px;
+  background: var(--color-text);
+  opacity: 0.45;
+}
+
+/* ---------- Légende ---------- */
+
+.legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding-right: 16px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* Géométrie seule : la couleur vient de la classe d'état qui l'accompagne. */
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.error {
+  margin: 0;
+  padding-right: 16px;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+@media (max-width: 600px) {
+  .grid {
+    --name-w: 92px;
+    --score-w: 40px;
+  }
+
+  .name {
+    font-size: 0.75rem;
+  }
+}
