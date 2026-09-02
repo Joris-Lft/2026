@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-travel-budget";
 import {
   compareBudgetCategories,
+  compareSpendLevels,
   isBudgetItem,
   sumPurchasedSpend,
   type BudgetLine,
@@ -87,7 +88,10 @@ export function BudgetSection({
       return matchesCategory && matchesSearch;
     });
 
+    // Priorité d'achat d'abord : strict minimum, puis confortable, puis royal.
     return [...filtered].sort((a, b) => {
+      const byLevel = compareSpendLevels(a.spendLevel, b.spendLevel);
+      if (byLevel !== 0) return byLevel;
       const byCategory = compareBudgetCategories(a.category, b.category);
       if (byCategory !== 0) return byCategory;
       return a.label.localeCompare(b.label, "fr");
