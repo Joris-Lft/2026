@@ -29,6 +29,7 @@ export function compareBudgetCategories(a: BudgetCategory, b: BudgetCategory) {
   return a.localeCompare(b, "fr");
 }
 
+/** Niveaux de dépense, du plus prioritaire au plus optionnel. */
 export const SPEND_LEVELS = [
   "Strict minimum",
   "Confortable",
@@ -44,6 +45,11 @@ export function isSpendLevel(value: unknown): value is SpendLevel {
     typeof value === "string" &&
     (SPEND_LEVELS as readonly string[]).includes(value)
   );
+}
+
+/** Ordonne les lignes par priorité d'achat, dans l'ordre de `SPEND_LEVELS`. */
+export function compareSpendLevels(a: SpendLevel, b: SpendLevel) {
+  return SPEND_LEVELS.indexOf(a) - SPEND_LEVELS.indexOf(b);
 }
 
 /** Budget estimé d'un voyage, détaillé par niveau de dépense. */
